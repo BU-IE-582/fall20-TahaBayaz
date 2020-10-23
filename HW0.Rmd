@@ -1,0 +1,38 @@
+---
+title: "Interesting R Examples"
+author: "Taha BAYAZ - IE582 - Fall 2020"
+---
+```{r,echo=FALSE,results="hide"}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+**1. Sports Data Analysis and Visualization**
+
+There are some data analysis in sports. I come up with the first analysis in Analytics Edge from Edx. It was fascinating to be able to understand the importance of analysis. With less money, we can be successful with the help of analysis. You can see an example of these analysis below.
+
+[Sports Data Analysis and Visualization](http://mattwaite.github.io/sports/)
+
+**2. Market Basket Analysis using R**
+
+For a market, every transaction is a data. There can be similarities among people and products. We can search for it with some algorithms. You can see an example code for Apriori algorithm which is an Association Rule Mining algorithm.
+
+[APRIORI Algorithm](https://www.datacamp.com/community/tutorials/market-basket-analysis-r)
+
+**3. Sentiment Analysis**
+
+_Natural Language Processing_ is a widely used machine learning problem in these days. Some problems contain the determination of the sentiment of a text whether it is positive, negative or neutral. Others may try to summarize a text or create a chat bot. For the sentiment analysis, you can look at the link below.
+
+[Simple Sentiment Analysis](https://www.r-bloggers.com/2016/01/sentiment-analysis-with-machine-learning-in-r/)
+
+**4. Disease Prediction**
+
+With the help of machine learning, we can predict whether a person will be ill or not based on the gathered information about that person. We can prevent illnesses like cancer. There is a dataset called Breast Cancer Wisconsin (Diagnostic) which contains the information about the people who are breast cancer and who are not breast cancer. From the below link, you can find an exploratory data analysis and creation of some machine learning models.
+
+[Breast Cancer Wisconsin](https://shiring.github.io/machine_learning/2017/03/31/webinar_code)
+
+**5. Introduction to Stock Analysis in R**
+
+There are many stocks and for these stocks, there are many information about their values. We can make some analysis about the future behavior of these stocks. You can see an example analysis for stocks below.
+
+[Stock Analysis](https://lamfo-unb.github.io/2017/07/22/intro-stock-analysis-1/)
