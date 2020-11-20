@@ -1,0 +1,513 @@
+---
+title: "Homework 1"
+author: "Taha BAYAZ"
+date: "20 11 2020"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+    theme: united
+    highlight: tango
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center", message = FALSE, warning = FALSE, error = FALSE)
+```
+
+<style>
+#TOC {
+ color: 
+ font-family: Calibri;
+ background-color:
+ border-color: darkred;
+}
+#header {
+ color: darkred;
+ font-family: Calibri;
+ background-color:
+}
+body {
+ font-family: Calibri;
+ }
+ 
+</style>
+
+# SPORT FORECASTING
+
+## 1. INTRODUCTION
+
+### 1.1 Data
+
+We can get the data from the [website](https://www.football-data.co.uk/data.php). This website contains the historical information of matches and betting odds data. In this assignment, we used the data for English Premier League back to 2018. You can get the data through this [page](https://www.football-data.co.uk/englandm.php). You can find all the meaning of columns from this [link](https://www.football-data.co.uk/notes.txt) or this [link](https://docs.google.com/spreadsheets/d/16aZYItIHmGmqaLnRaW0XUMcwFFNxhcLB6nKqpzog06c/)
+
+### 1.2 Objective
+
+In this assignment, we want to figure out the decisions of bookmakers (betting companies) and the behaviour of the Premier League. To do so, we will try to understand the relationship among the odds of home, draw and away.
+Throughout the assignment, we will use _data.table_ and _tidyverse_ packages.
+
+```{r packages, message=FALSE, warning=FALSE}
+#Required packages
+pti <- c("data.table", "tidyverse")
+pti <- pti[!(pti %in% installed.packages())]
+if(length(pti)>0){
+    install.packages(pti)
+}
+
+library(data.table)
+library(tidyverse)
+```
+
+We can get the data with these commands.
+
+```{r data from url, eval = FALSE}
+data0 = fread("https://www.football-data.co.uk/mmz4281/2021/E0.csv", select = c(2, 4:42))
+data1 = fread("https://www.football-data.co.uk/mmz4281/1920/E0.csv", select = c(2, 4:42))
+data2 = fread("https://www.football-data.co.uk/mmz4281/1819/E0.csv", select = 2:41)
+data = rbind(data0, data1, data2)
+head(data)
+```
+
+```{r data from local, include=FALSE}
+data0 = fread("E0.csv", select = c(2, 4:42))
+data1 = fread("E1.csv", select = c(2, 4:42))
+data2 = fread("E2.csv", select = 2:41)
+data = rbind(data0, data1, data2)
+head(data)
+```
+
+There are many columns in these datasets but we get a subset of columns for this assignment.
+
+## 2. TASKS
+
+### 2.1 Task 1
+
+At the beginning, we need to plot the data to understand the distribution. To do so, we can use the histogram.
+
+```{r FTHG}
+data %>%
+  ggplot(., aes(x = as.factor(FTHG))) +
+  geom_histogram(stat = "count") +
+  theme_minimal() +
+  labs(x = "Home Goals",
+       y = "Number of Games")
+```
+
+This is the histogram of the home goals column. 
+
+```{r FTAG}
+data %>%
+  ggplot(., aes(x = as.factor(FTAG))) +
+  geom_histogram(stat = "count") +
+  theme_minimal() +
+  labs(x = "Away Goals",
+       y = "Number of Games")
+```
+
+This is the histogram of the away goals column. 
+
+```{r FTHG - FTAG}
+data %>%
+  ggplot(., aes(x = as.factor(FTHG - FTAG))) +
+  geom_histogram(stat = "count") +
+  theme_minimal() +
+  labs(x = "Home Goals - Away Goals",
+       y = "Number of Games")
+```
+
+This is the histogram of the subtracting the away goals column from home goals column. 
+
+When we observe the histograms, home goals and away goals are looks like distributed with Poisson distribution. Here is an example of the Poisson distribution.
+
+![Poisson Distribution](http://www.umass.edu/wsp/images/poisson3.gif)
+
+This data (home / away column) can be distributed with Poisson distribution with respect to their histograms. We can generate values from a Poisson distribution whose lambda value is the mean of the home / away goals and input values are the integer values from the minimum to maximum value of that column. 
+
+```{r FTHG Pois}
+xfit = seq(min(data$FTHG), max(data$FTHG), by = 1)
+yfit = dpois(xfit, lambda = mean(data$FTHG))
+pois = data.table(x = xfit, y = yfit)
+
+ggplot() +
+  geom_histogram(aes(x = FTHG), stat = "count", data = data) +
+  geom_line(aes(x = x, y = y * nrow(data)), data = pois, color = "red") +
+  theme_minimal() +
+  labs(x = "Home Goals",
+       y = "Number of Games")
+```
+
+When we observe the line and histogram, they almost match with each other. This means that home goals column can have Poisson distribution.
+
+```{r FTAG Pois}
+xfit = seq(min(data$FTAG), max(data$FTAG), by = 1)
+yfit = dpois(xfit, lambda = mean(data$FTAG))
+pois = data.table(x = xfit, y = yfit)
+
+ggplot() +
+  geom_histogram(aes(x = FTAG), stat = "count", data = data) +
+  geom_line(aes(x = x, y = y * nrow(data)), data = pois, color = "red") +
+  theme_minimal() +
+  labs(x = "Away Goals",
+       y = "Number of Games")
+```
+
+When we observe the line and histogram, they almost match with each other. This means that away goals column can have Poisson distribution.
+
+### 2.2 Task 2
+
+From now on, we can find the probabilities of these odds. It can be calculated with taking the inverse of the odds. We use the odds information of _Bet365_, _Bet&Win_, _Interwetten_ and _Pinnacle_ bookmakers odds information.
+
+```{r prob}
+#B365
+data$B365_prob_home = 1 / data$B365H
+data$B365_prob_draw = 1 / data$B365D
+data$B365_prob_away = 1 / data$B365A
+
+#BW
+data$BW_prob_home = 1 / data$BWH
+data$BW_prob_draw = 1 / data$BWD
+data$BW_prob_away = 1 / data$BWA
+
+#IW
+data$IW_prob_home = 1 / data$IWH
+data$IW_prob_draw = 1 / data$IWD
+data$IW_prob_away = 1 / data$IWA
+
+#PS
+data$PS_prob_home = 1 / data$PSH
+data$PS_prob_draw = 1 / data$PSD
+data$PS_prob_away = 1 / data$PSA
+```
+
+When we observe the probabilities, we can see that their sum are not equal to 1 (for example, for the first row, sum of the probabilities of Bet365 is `r data[1, B365_prob_home + B365_prob_draw + B365_prob_away]`). This is an expected outcome, because the `r (round(data[1, B365_prob_home + B365_prob_draw + B365_prob_away], 2) - 1) * 100`% margin is the bookmaker's gain from this game. So, we need to normalize the probabilities with dividing each of them with the sum of three probabilities.
+
+```{r prob normalized}
+#B365 normalized
+data$B365_norm_prob_home = data$B365_prob_home / (data$B365_prob_home + data$B365_prob_draw + data$B365_prob_away)
+data$B365_norm_prob_draw = data$B365_prob_draw / (data$B365_prob_home + data$B365_prob_draw + data$B365_prob_away)
+data$B365_norm_prob_away = data$B365_prob_away / (data$B365_prob_home + data$B365_prob_draw + data$B365_prob_away)
+
+#BW normalized
+data$BW_norm_prob_home = data$BW_prob_home / (data$BW_prob_home + data$BW_prob_draw + data$BW_prob_away)
+data$BW_norm_prob_draw = data$BW_prob_draw / (data$BW_prob_home + data$BW_prob_draw + data$BW_prob_away)
+data$BW_norm_prob_away = data$BW_prob_away / (data$BW_prob_home + data$BW_prob_draw + data$BW_prob_away)
+
+#IW normalized
+data$IW_norm_prob_home = data$IW_prob_home / (data$IW_prob_home + data$IW_prob_draw + data$IW_prob_away)
+data$IW_norm_prob_draw = data$IW_prob_draw / (data$IW_prob_home + data$IW_prob_draw + data$IW_prob_away)
+data$IW_norm_prob_away = data$IW_prob_away / (data$IW_prob_home + data$IW_prob_draw + data$IW_prob_away)
+
+#PS normalized
+data$PS_norm_prob_home = data$PS_prob_home / (data$PS_prob_home + data$PS_prob_draw + data$PS_prob_away)
+data$PS_norm_prob_draw = data$PS_prob_draw / (data$PS_prob_home + data$PS_prob_draw + data$PS_prob_away)
+data$PS_norm_prob_away = data$PS_prob_away / (data$PS_prob_home + data$PS_prob_draw + data$PS_prob_away)
+```
+
+Now, we try to understand whether the bookmaker is good enough to predict the draw *result*. To do so, firstly we need to divide the data into some bins and then get the mean of the draw result in these bins. After preparing the data, we can plot these results with their probabilities. We used the Bet365 information for this action.
+
+```{r}
+data = data %>%
+  mutate(FTR_draw = ifelse(FTR == 'D', 1, 0)) %>%
+  mutate(bins = case_when(B365_norm_prob_home - B365_norm_prob_away < -0.9 ~ "1",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.8 ~ "2",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.7 ~ "3",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.6 ~ "4",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.5 ~ "5",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.4 ~ "6",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.3 ~ "7",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.2 ~ "8",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.1 ~ "9",
+                          B365_norm_prob_home - B365_norm_prob_away < 0 ~ "10",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.1 ~ "11",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.2 ~ "12",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.3 ~ "13",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.4 ~ "14",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.5 ~ "15",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.6 ~ "16",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.7 ~ "17",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.8 ~ "18",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_B365 = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = B365_norm_prob_home - B365_norm_prob_away, y = draw_mean_B365), data = data, color = "red") +
+  geom_point(aes(x = B365_norm_prob_home - B365_norm_prob_away, y = B365_norm_prob_draw), data = data, color = "blue") +
+  labs(title = 'Bet365',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can see that the actual draw probability is higher than the bookmaker's probability. It means that if we bet draw for the matches which subtraction probability of home probability from away probability is between 0 and 0.1, we can earn money in the long run. Because the bookmaker gives more odds than the actual odds for these matches.
+We can do the similar operation for the other bookmakers.
+
+```{r}
+data = data %>%
+  mutate(bins = case_when(BW_norm_prob_home - BW_norm_prob_away < -0.9 ~ "1",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.8 ~ "2",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.7 ~ "3",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.6 ~ "4",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.5 ~ "5",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.4 ~ "6",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.3 ~ "7",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.2 ~ "8",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.1 ~ "9",
+                          BW_norm_prob_home - BW_norm_prob_away < 0 ~ "10",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.1 ~ "11",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.2 ~ "12",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.3 ~ "13",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.4 ~ "14",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.5 ~ "15",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.6 ~ "16",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.7 ~ "17",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.8 ~ "18",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_BW = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = BW_norm_prob_home - BW_norm_prob_away, y = draw_mean_BW), data = data, color = "red") +
+  geom_point(aes(x = BW_norm_prob_home - BW_norm_prob_away, y = BW_norm_prob_draw), data = data, color = "blue") +
+  labs(title = 'Bet&Win',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can see that the same result is applicable for the range between 0 and 0.1 and the range between 0.3 and 0.4. 
+
+```{r}
+data = data %>%
+  mutate(bins = case_when(IW_norm_prob_home - IW_norm_prob_away < -0.9 ~ "1",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.8 ~ "2",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.7 ~ "3",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.6 ~ "4",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.5 ~ "5",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.4 ~ "6",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.3 ~ "7",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.2 ~ "8",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.1 ~ "9",
+                          IW_norm_prob_home - IW_norm_prob_away < 0 ~ "10",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.1 ~ "11",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.2 ~ "12",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.3 ~ "13",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.4 ~ "14",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.5 ~ "15",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.6 ~ "16",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.7 ~ "17",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.8 ~ "18",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_IW = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = IW_norm_prob_home - IW_norm_prob_away, y = draw_mean_IW), data = data, color = "red") +
+  geom_point(aes(x = IW_norm_prob_home - IW_norm_prob_away, y = IW_norm_prob_draw), data = data, color = "blue") +
+  labs(title = 'Interwetten',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can not give any region with the same winning strategy for this bookmaker. 
+
+```{r}
+data = data %>%
+  mutate(bins = case_when(PS_norm_prob_home - PS_norm_prob_away < -0.9 ~ "1",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.8 ~ "2",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.7 ~ "3",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.6 ~ "4",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.5 ~ "5",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.4 ~ "6",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.3 ~ "7",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.2 ~ "8",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.1 ~ "9",
+                          PS_norm_prob_home - PS_norm_prob_away < 0 ~ "10",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.1 ~ "11",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.2 ~ "12",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.3 ~ "13",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.4 ~ "14",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.5 ~ "15",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.6 ~ "16",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.7 ~ "17",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.8 ~ "18",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_PS = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = PS_norm_prob_home - PS_norm_prob_away, y = draw_mean_PS), data = data, color = "red") +
+  geom_point(aes(x = PS_norm_prob_home - PS_norm_prob_away, y = PS_norm_prob_draw), data = data, color = "blue") +
+  labs(title = 'Pinnacle', 
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can give the same winning strategy for the range between 0 and 0.1.
+
+### 2.3 Task 3
+
+In some matches, there are some events that can affect the outcome of the game. Getting a red card in the early time of a match can be result as a lose. So, we can look the odds of the matches without any red card and try eliminate any noise in the data. The filtering operation can be done like this.
+
+```{r}
+data3 = data %>%
+  filter(HR + AR == 0)
+```
+
+We can do the similar processes for this data.
+
+```{r}
+data3 = data3 %>%
+  mutate(bins = case_when(B365_norm_prob_home - B365_norm_prob_away < -0.9 ~ "1",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.8 ~ "2",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.7 ~ "3",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.6 ~ "4",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.5 ~ "5",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.4 ~ "6",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.3 ~ "7",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.2 ~ "8",
+                          B365_norm_prob_home - B365_norm_prob_away < -0.1 ~ "9",
+                          B365_norm_prob_home - B365_norm_prob_away < 0 ~ "10",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.1 ~ "11",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.2 ~ "12",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.3 ~ "13",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.4 ~ "14",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.5 ~ "15",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.6 ~ "16",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.7 ~ "17",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.8 ~ "18",
+                          B365_norm_prob_home - B365_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_B365 = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = B365_norm_prob_home - B365_norm_prob_away, y = draw_mean_B365), data = data3, color = "red") +
+  geom_point(aes(x = B365_norm_prob_home - B365_norm_prob_away, y = B365_norm_prob_draw), data = data3, color = "blue") +
+  labs(title = 'Bet365',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+For Bet365, we can see that betting for draw strategy is also a winning for the range between 0.1 and 0.2 and the range between 0.5 and 0.6. It means that having a red card effect the odds of the Bet365 bookmaker.
+
+```{r}
+data3 = data3 %>%
+  mutate(bins = case_when(BW_norm_prob_home - BW_norm_prob_away < -0.9 ~ "1",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.8 ~ "2",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.7 ~ "3",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.6 ~ "4",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.5 ~ "5",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.4 ~ "6",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.3 ~ "7",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.2 ~ "8",
+                          BW_norm_prob_home - BW_norm_prob_away < -0.1 ~ "9",
+                          BW_norm_prob_home - BW_norm_prob_away < 0 ~ "10",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.1 ~ "11",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.2 ~ "12",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.3 ~ "13",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.4 ~ "14",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.5 ~ "15",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.6 ~ "16",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.7 ~ "17",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.8 ~ "18",
+                          BW_norm_prob_home - BW_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_BW = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = BW_norm_prob_home - BW_norm_prob_away, y = draw_mean_BW), data = data3, color = "red") +
+  geom_point(aes(x = BW_norm_prob_home - BW_norm_prob_away, y = BW_norm_prob_draw), data = data3, color = "blue") +
+  labs(title = 'Bet&Win',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can say that there is no difference for Bet&Win bookmaker after removing the noisy matches.
+
+```{r}
+data3 = data3 %>%
+  mutate(bins = case_when(IW_norm_prob_home - IW_norm_prob_away < -0.9 ~ "1",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.8 ~ "2",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.7 ~ "3",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.6 ~ "4",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.5 ~ "5",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.4 ~ "6",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.3 ~ "7",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.2 ~ "8",
+                          IW_norm_prob_home - IW_norm_prob_away < -0.1 ~ "9",
+                          IW_norm_prob_home - IW_norm_prob_away < 0 ~ "10",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.1 ~ "11",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.2 ~ "12",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.3 ~ "13",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.4 ~ "14",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.5 ~ "15",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.6 ~ "16",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.7 ~ "17",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.8 ~ "18",
+                          IW_norm_prob_home - IW_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_IW = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = IW_norm_prob_home - IW_norm_prob_away, y = draw_mean_IW), data = data3, color = "red") +
+  geom_point(aes(x = IW_norm_prob_home - IW_norm_prob_away, y = IW_norm_prob_draw), data = data3, color = "blue") +
+  labs(title = 'Interwetten',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can say that there is no difference for Interwetten bookmaker after removing the noisy matches.
+
+```{r}
+data3 = data3 %>%
+  mutate(bins = case_when(PS_norm_prob_home - PS_norm_prob_away < -0.9 ~ "1",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.8 ~ "2",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.7 ~ "3",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.6 ~ "4",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.5 ~ "5",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.4 ~ "6",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.3 ~ "7",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.2 ~ "8",
+                          PS_norm_prob_home - PS_norm_prob_away < -0.1 ~ "9",
+                          PS_norm_prob_home - PS_norm_prob_away < 0 ~ "10",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.1 ~ "11",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.2 ~ "12",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.3 ~ "13",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.4 ~ "14",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.5 ~ "15",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.6 ~ "16",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.7 ~ "17",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.8 ~ "18",
+                          PS_norm_prob_home - PS_norm_prob_away < 0.9 ~ "19",
+                          TRUE ~ "20")) %>%
+  group_by(bins) %>%
+  mutate(draw_mean_PS = mean(FTR_draw))
+
+ggplot() +
+  geom_point(aes(x = PS_norm_prob_home - PS_norm_prob_away, y = draw_mean_PS), data = data3, color = "red") +
+  geom_point(aes(x = PS_norm_prob_home - PS_norm_prob_away, y = PS_norm_prob_draw), data = data3, color = "blue") +
+  labs(title = 'Pinnacle',
+       x = 'Home probability - Away probability',
+       y = 'Draw probability')
+```
+
+From this plot, we can say that there is no difference for Pinnacle bookmaker after removing the noisy matches.
+
+## RESOURCES
+
+- [Data](https://www.football-data.co.uk/data.php)
+- [Poisson Distribution](https://sites.google.com/site/theprobabilityofrandomness/website-builder)
+- [Generate values from a Poisson Distribution](https://www.statmethods.net/graphs/density.html)
+- [Statistical Football Modeling A Study of Football Betting and Implementation of Statistical Algorithms in Premier League](http://www.it.uu.se/edu/course/homepage/projektTDB/ht15/project16/Project16_Report.pdf)

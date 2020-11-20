@@ -1,5 +1,9 @@
 # Example Progress Journal
 
-## Week 0 (September 22)
+## Homework 0
 
-[Here](https://bu-ie-582.github.io/fall20-TahaBayaz/HW0.html) is my 5 interesting R examples
+[Here](HW0.html) is my 5 interesting R examples.
+
+## Homework 1
+
+You can find the homework from this [link](HW1.html)
