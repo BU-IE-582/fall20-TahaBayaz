@@ -2,8 +2,8 @@
 
 ## Homework 0
 
-[Here](HW0.html) is my 5 interesting R examples.
+[Here](Homework/HW0/Examples.html) is my 5 interesting R examples.
 
 ## Homework 1
 
-You can find the homework from this [link](HW1.html)
+You can find the homework from this [link](Homework/HW1/Sport Forcasting.html)
