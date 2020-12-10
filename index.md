@@ -6,4 +6,4 @@
 
 ## Homework 1
 
-You can find the homework from this [link](Homework/HW1/Sport Forcasting.html)
+You can find the homework from this [link](Homework/HW1/Sport-Forcasting.html)
