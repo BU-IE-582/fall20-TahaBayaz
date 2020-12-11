@@ -55,6 +55,8 @@ Throughout the assignment, we will use _data.table_, _tidyverse_ and _plotly_ pa
 
 ## 2. TASKS
 
+### 2.1 Packages and Funcitons
+
 ```{r packages, message=FALSE, warning=FALSE}
 #Required packages
 pti <- c("data.table", "tidyverse", "plotly")
@@ -80,7 +82,7 @@ prepare_data = function(from, ax){
 
 transform_long = function(data, ax){
   data = data[, "time series" := 1:nrow(data)]
-  data_long = gather(data, "time index", val, paste(ax, 'T1', sep = ''):paste(ax, 'T315', sep = ''))
+  data_long = gather(data, "time index", val, c(-1, -ncol(data)))
   colnames(data_long)[4] = ax
   data_long[,3] = unlist(lapply(data_long[,3], function(x){as.numeric(substring(x, 3, length(x) + 4))}))
   data_long = data_long[order(data_long[,2], data_long[,3]),]
@@ -119,6 +121,8 @@ pca_class = function(value){
 ```
 
 With following steps, we imported the data, created a wide and long format of the data.
+
+### 2.2 Data Manupilation
 
 ```{r data from url, eval = FALSE}
 x_train = prepare_data("https://drive.google.com/uc?export=download&id=1KDhDT0FE5lkjvn62YTCJ87vZ7A5uS5TT", "X")
@@ -174,7 +178,7 @@ head(z_train_long)
 head(data_long)
 ```
 
-### 2.1 Task A
+### 2.3 Task A
 
 We can plot the data in 3D. To do so, we used the _plotly_ package and coordinate information.
 
@@ -210,9 +214,13 @@ plot_ly(x = x_pos[,"pos_8"], y = y_pos[,"pos_8"], z = z_pos[,"pos_8"], type="sca
 
 Even if they are not the same, these plots are the graphical (3D) representation of the gestures shown below.
 
-![Gesture classes](gestures.png)
+<center>
 
-### 2.2 Task B
+![Gesture classes](gestures.png){#id .class width=400 height=400px}
+
+</center>
+
+### 2.4 Task B
 
 We can apply PCA to get 1D information from 3D. Before that we need to check the scale of the data. If they are not in the same scale, we need to standardize the data to make them in the same scale. 
 
@@ -296,7 +304,7 @@ From the plot above, we can not say that they are similar. But, when we compare 
 
 This is the expected result. Because, as in the summary of the PCA, one component can only explain the half of the data. So, we lose some information in this process. 
 
-### 2.3 Task C
+### 2.5 Task C
 
 Another approach would be to apply the PCA process for every class individually. We can expect to get better result with this approach, because we can reduce the variance among the classes. 
 
@@ -350,7 +358,7 @@ When we look at the summary, we see that 61% of the data can be explained with o
 
 In general, we can say that applying PCA for every class gives better result than applying to all class. This approach is applicable for this data, because we have only eight class. If we have many more class than eight, it would be more time consuming process.
 
-### 2.4 Task D
+### 2.6 Task D
 
 When we look at the data, we can see that there are 315 time ordered information. This is a huge number to consider as feature number in a model. So, to reduce the number of feature is a good approach. To do so, we can use multi dimensional scaling (MDS) approach. Before this approach, we need to have distance matrix of the data. We can get distance matrix with *dist* function. We used _manhattan_ method as calculating the distance, because we need to sum all distances of axes and this summation will be in a way like manhattan. So, to maintain the consistency, we should use the manhattan method. If we want to use euclidean method, we need to sum all axes' distance in euclidean method, too.
 
