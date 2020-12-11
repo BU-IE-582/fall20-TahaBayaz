@@ -368,9 +368,10 @@ y_train_distance = as.matrix(dist(y_train[, 2:316], method = 'manhattan'))
 z_train_distance = as.matrix(dist(z_train[, 2:316], method = 'manhattan'))
 
 data_distance = x_train_distance + y_train_distance + z_train_distance
+dim(data_distance)
 ```
 
-After preparing the data, we can apply the MDS process and plot the result with respect to classes.
+Now, we have a `r nrow(data_distance)` x `r ncol(data_distance)` distance matrix. After preparing the data, we can apply the MDS process and plot the result with respect to classes.
 
 ```{r}
 mds = cmdscale(data_distance, k=2)
