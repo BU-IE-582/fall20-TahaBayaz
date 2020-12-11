@@ -53,6 +53,8 @@ The library, uWaveGestureLibrary, consists over 4000 instances each of which has
 In this assignment, we want to apply principle component analysis (PCA) to be able to describe the 3D information in 1D. Also, we try to reduce the dimension of the time order from 315 to 2. So, we can use much more less column to describe the gesture of the user.
 Throughout the assignment, we will use _data.table_, _tidyverse_ and _plotly_ packages.
 
+## 2. TASKS
+
 ```{r packages, message=FALSE, warning=FALSE}
 #Required packages
 pti <- c("data.table", "tidyverse", "plotly")
@@ -66,7 +68,7 @@ library(tidyverse)
 library(plotly)
 ```
 
-Following functions are created in order to accomplish the objective. First function, *prepare_data*, is used to import the data and rename the columns. Second function, *transform_long*, is used to transform the wide data into long data, which is called melting the data. Third function, *coord*, is used to calculate the coordinate information from accelerometer information, which taking the cumulative summation of the cumulative summation of accelerometer. Fourth function, *pca_plot*, is used to plot the first component of the PCA result. In the plot, we randomly pick 2 instances of the class. The fifth function, *pca_class*, is used to apply PCA to each class separately.
+Following functions are created in order to accomplish the objective. First function, *prepare_data*, is used to import the data and rename the columns. Second function, *transform_long*, is used to transform the wide data into long data, which is called melting the data. Third function, *cal_pos*, is used to calculate the position information from accelerometer information, which taking the cumulative summation of the cumulative summation of accelerometer. Fourth function, *pca_plot*, is used to plot the first component of the PCA result. In the plot, we randomly pick 2 instances of the class. The fifth function, *pca_class*, is used to apply PCA to each class separately.
 
 ```{r functions}
 prepare_data = function(from, ax){
@@ -85,13 +87,13 @@ transform_long = function(data, ax){
   as.data.table(data_long)
 }
 
-coord = function(data, ax){
+cal_pos = function(data, ax){
   x = data[data[, .I[15], by = class]$V1][, -1]
   y = t(x)
   y = y[,order(data[data[, .I[1], by = class]$V1][, class])]
   y = cbind(y, apply(y, 2, cumsum))
   y = cbind(y, apply(y[,9:16], 2, cumsum))
-  colnames(y) = c(paste(ax, 1:8, sep = "_"), paste("vel", 1:8, sep = "_"), paste("coord", 1:8, sep = "_"))
+  colnames(y) = c(paste(ax, 1:8, sep = "_"), paste("vel", 1:8, sep = "_"), paste("pos", 1:8, sep = "_"))
   y
 }
 
@@ -172,37 +174,37 @@ head(z_train_long)
 head(data_long)
 ```
 
-a)
+### 2.1 Task A
 
 We can plot the data in 3D. To do so, we used the _plotly_ package and coordinate information.
 
 ```{r 3D scatter}
-x_coord = coord(x_train, 'X')
-y_coord = coord(y_train, 'Y')
-z_coord = coord(z_train, 'Z')
+x_pos = cal_pos(x_train, 'X')
+y_pos = cal_pos(y_train, 'Y')
+z_pos = cal_pos(z_train, 'Z')
 
-# a = y[, "coord_2"]
-# b = y2[, "coord_2"]
+# a = y[, "pos_2"]
+# b = y2[, "pos_2"]
 # 
 # result = data.table(a, b)
 # ggplot(result, aes(x = a, y = b)) +
 #   geom_point()
 
-plot_ly(x = x_coord[,"coord_1"], y = y_coord[,"coord_1"], z = z_coord[,"coord_1"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_1"], y = y_pos[,"pos_1"], z = z_pos[,"pos_1"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 1")
-plot_ly(x = x_coord[,"coord_2"], y = y_coord[,"coord_2"], z = z_coord[,"coord_2"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_2"], y = y_pos[,"pos_2"], z = z_pos[,"pos_2"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 2")
-plot_ly(x = x_coord[,"coord_3"], y = y_coord[,"coord_3"], z = z_coord[,"coord_3"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_3"], y = y_pos[,"pos_3"], z = z_pos[,"pos_3"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 3")
-plot_ly(x = x_coord[,"coord_4"], y = y_coord[,"coord_4"], z = z_coord[,"coord_4"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_4"], y = y_pos[,"pos_4"], z = z_pos[,"pos_4"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 4")
-plot_ly(x = x_coord[,"coord_5"], y = y_coord[,"coord_5"], z = z_coord[,"coord_5"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_5"], y = y_pos[,"pos_5"], z = z_pos[,"pos_5"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 5")
-plot_ly(x = x_coord[,"coord_6"], y = y_coord[,"coord_6"], z = z_coord[,"coord_6"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_6"], y = y_pos[,"pos_6"], z = z_pos[,"pos_6"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 6")
-plot_ly(x = x_coord[,"coord_7"], y = y_coord[,"coord_7"], z = z_coord[,"coord_7"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_7"], y = y_pos[,"pos_7"], z = z_pos[,"pos_7"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 7")
-plot_ly(x = x_coord[,"coord_8"], y = y_coord[,"coord_8"], z = z_coord[,"coord_8"], type="scatter3d", mode="markers") %>%
+plot_ly(x = x_pos[,"pos_8"], y = y_pos[,"pos_8"], z = z_pos[,"pos_8"], type="scatter3d", mode="markers") %>%
   layout(title = "3D Representation of Accelerometer for Class 8")
 ```
 
@@ -210,9 +212,11 @@ Even if they are not the same, these plots are the graphical (3D) representation
 
 ![Gesture classes](gestures.png)
 
-b)
+### 2.2 Task B
 
 We can apply PCA to get 1D information from 3D. Before that we need to check the scale of the data. If they are not in the same scale, we need to standardize the data to make them in the same scale. 
+
+In this step, we are using the accelerometer information. Another possibility would be to use the position information of all instances. 
 
 ```{r}
 head(apply(x_train[,-1], 1, mean))
@@ -236,63 +240,63 @@ When we observe the summary output, we see that with one principal component we 
 
 ```{r}
 pca_plot(1)
-plot_ly(x = x_coord[,"X_1"], y = y_coord[,"Y_1"], z = z_coord[,"Z_1"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_1"], y = y_pos[,"Y_1"], z = z_pos[,"Z_1"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 ```{r}
 pca_plot(2)
-plot_ly(x = x_coord[,"X_2"], y = y_coord[,"Y_2"], z = z_coord[,"Z_2"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_2"], y = y_pos[,"Y_2"], z = z_pos[,"Z_2"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 ```{r}
 pca_plot(3)
-plot_ly(x = x_coord[,"X_3"], y = y_coord[,"Y_3"], z = z_coord[,"Z_3"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_3"], y = y_pos[,"Y_3"], z = z_pos[,"Z_3"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 ```{r}
 pca_plot(4)
-plot_ly(x = x_coord[,"X_4"], y = y_coord[,"Y_4"], z = z_coord[,"Z_4"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_4"], y = y_pos[,"Y_4"], z = z_pos[,"Z_4"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 ```{r}
 pca_plot(5)
-plot_ly(x = x_coord[,"X_5"], y = y_coord[,"Y_5"], z = z_coord[,"Z_5"], type="scatter3d", mode="markers")
-```
-
-From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
-
-```{r}
-pca_plot(7)
-plot_ly(x = x_coord[,"X_7"], y = y_coord[,"Y_7"], z = z_coord[,"Z_7"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_5"], y = y_pos[,"Y_5"], z = z_pos[,"Z_5"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 ```{r}
 pca_plot(6)
-plot_ly(x = x_coord[,"X_6"], y = y_coord[,"Y_6"], z = z_coord[,"Z_6"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_6"], y = y_pos[,"Y_6"], z = z_pos[,"Z_6"], type="scatter3d", mode="markers")
+```
+
+From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
+
+```{r}
+pca_plot(7)
+plot_ly(x = x_pos[,"X_7"], y = y_pos[,"Y_7"], z = z_pos[,"Z_7"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 ```{r}
 pca_plot(8)
-plot_ly(x = x_coord[,"X_8"], y = y_coord[,"Y_8"], z = z_coord[,"Z_8"], type="scatter3d", mode="markers")
+plot_ly(x = x_pos[,"X_8"], y = y_pos[,"Y_8"], z = z_pos[,"Z_8"], type="scatter3d", mode="markers")
 ```
 
 From the plot above, we can not say that they are similar. But, when we compare the two random data points within each other, we can say that they have similar information.
 
 This is the expected result. Because, as in the summary of the PCA, one component can only explain the half of the data. So, we lose some information in this process. 
 
-c)
+### 2.3 Task C
 
 Another approach would be to apply the PCA process for every class individually. We can expect to get better result with this approach, because we can reduce the variance among the classes. 
 
@@ -346,7 +350,7 @@ When we look at the summary, we see that 61% of the data can be explained with o
 
 In general, we can say that applying PCA for every class gives better result than applying to all class. This approach is applicable for this data, because we have only eight class. If we have many more class than eight, it would be more time consuming process.
 
-d)
+### 2.4 Task D
 
 When we look at the data, we can see that there are 315 time ordered information. This is a huge number to consider as feature number in a model. So, to reduce the number of feature is a good approach. To do so, we can use multi dimensional scaling (MDS) approach. Before this approach, we need to have distance matrix of the data. We can get distance matrix with *dist* function. We used _manhattan_ method as calculating the distance, because we need to sum all distances of axes and this summation will be in a way like manhattan. So, to maintain the consistency, we should use the manhattan method. If we want to use euclidean method, we need to sum all axes' distance in euclidean method, too.
 
