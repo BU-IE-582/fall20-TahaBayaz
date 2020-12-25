@@ -11,3 +11,7 @@ You can find the homework from this [link](Homework/HW1/Sport-Forcasting.html)
 ## Homework 2
 
 You can find the homework from this [link](Homework/HW2/PCA-uWaveGestureLibrary.html)
+
+## Homework 2
+
+You can find the homework from this [link](Homework/HW3/ELECTRICITY-CONSUMPTION-FORECAST.html)
