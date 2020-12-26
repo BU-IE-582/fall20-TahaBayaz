@@ -90,14 +90,6 @@ transform_long = function(data){
   long[, c("Date", "Hour", "Lag_48", "Lag_168", "Consumption")]
 }
 
-# transform_long = function(data){
-#   long = data.table(Date = data$Date,
-#                     Hour = data$Hour,
-#                     Lag_48 = lag(data$Consumption, n = 48, default = 0),
-#                     Lag_168 = lag(data$Consumption, n = 168, default = 0),
-#                     Consumption = data$Consumption)
-# }
-
 transform_wide = function(data){
   lag_48 = dcast(data, Date ~ Hour, fun = mean, value.var = 'Lag_48', fill = 0)
   lag_168 = dcast(data, Date ~ Hour, fun = mean, value.var = 'Lag_168', fill = 0)
@@ -191,7 +183,6 @@ It should a numeric variable. So, we need to convert it to character. But, as we
 
 ```{r consumption control2}
 electricity[,Consumption := as.numeric(sapply(strsplit(Consumption,"\\.|\\,"),function(x){ifelse(length(x) == 3, paste(x[1], x[2], '.', x[3], sep = ''), 0)}))]
-# electricity$Consumption = as.numeric(str_replace(str_replace(electricity$Consumption, "\\.", "") , "\\,", "."))
 ```
 
 Now, we solved all problems in the data. To easily identify the train and test data, we can create a column.
