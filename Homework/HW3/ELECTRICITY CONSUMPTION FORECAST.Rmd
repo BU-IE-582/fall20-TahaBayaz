@@ -87,7 +87,8 @@ calculate_mape = function(pred, true){
 
 transform_long = function(data){
   long = data[,c("Lag_48", "Lag_168") := list(shift(Consumption, n = 48, fill = 0), shift(Consumption, n = 168, fill = 0))]
-  long[, c("Date", "Hour", "Lag_48", "Lag_168", "Consumption")]
+  # We can remove 7 days from data, because 7 << 1797.
+  long[169:nrow(long), c("Date", "Hour", "Lag_48", "Lag_168", "Consumption")]
 }
 
 transform_wide = function(data){
@@ -185,6 +186,24 @@ It should a numeric variable. So, we need to convert it to character. But, as we
 electricity[,Consumption := as.numeric(sapply(strsplit(Consumption,"\\.|\\,"),function(x){ifelse(length(x) == 3, paste(x[1], x[2], '.', x[3], sep = ''), 0)}))]
 ```
 
+We need to check `Consumption` values whether there are 0 or not.
+
+```{r}
+electricity[Consumption == 0, ]
+```
+
+As we can see, there are two zero values in `Consumption` column. We can assign the average consumption of that hour for zero values.
+
+```{r}
+electricity[Consumption == 0, Consumption := NA]
+mean_2 = electricity[Hour == 2, mean(Consumption, na.rm = TRUE)]
+mean_3 = electricity[Hour == 3, mean(Consumption, na.rm = TRUE)]
+
+electricity[Date == '2016-03-27' & Hour == 2, Consumption := mean_2]
+electricity[Date == '2016-03-27' & Hour == 3, Consumption := mean_3]
+electricity[Consumption == 0, ]
+```
+
 Now, we solved all problems in the data. To easily identify the train and test data, we can create a column.
 
 ```{r Train/Test_split}
@@ -193,13 +212,14 @@ electricity[Date >= '2020-11-01', Test := 1]
 head(electricity)
 ```
 
-We have reached final shape of the data. Throughout the assignment, we will use some formats of this data, which are in long and wide format. We can get these formatted data from the code below.
+We have reached final shape of the data. Throughout the assignment, we will use some formats of this data, which are in long and wide format. We can get these formatted data from the code below. Also, we removed first 186 rows from `electricity` data, because we removed the rows with NAs in `electricity_long` data
 
 ```{r data format}
 electricity_long = transform_long(electricity)
 head(electricity_long)
 electricity_wide = transform_wide(electricity_long)
 head(electricity_wide)
+electricity = electricity[169:nrow(electricity),]
 ```
 
 We are ready to accomplish the tasks.
@@ -223,7 +243,7 @@ MAPE of lag 168 is `r MAPE_lag168` and MAPE of lag 48 is `r MAPE_lag48`. Lag 168
 
 ### 2.4 Task 2
 
-Rather than using the consumption of seven days ago, we can create a model that uses the lag 168 and lag 48 values as input. Our model can be linear regression. For the lag values of NA rows, we will impute 0.
+Rather than using the consumption of seven days ago, we can create a model that uses the lag 168 and lag 48 values as input. Our model can be a linear regression model.
 
 ```{r lr model}
 model_lr = lm(Consumption ~ Lag_168 + Lag_48, data = electricity_long[electricity$Test == 0])
@@ -238,7 +258,7 @@ MAPE_lr = calculate_mape(pred = predict_lr, true = electricity_long$Consumption[
 MAPE_lr
 ```
 
-When we compare the MAPE value of this model with lag 168 naïve approach, it is better to use the naïve approach than this linear regression.
+When we compare the MAPE value of this model with lag 168 naïve approach, it is better to use the naïve approach than this linear regression. So, it means that out model is not good enough than just predicting the value of last week.
 
 ### 2.5 Task 3
 
@@ -256,11 +276,11 @@ model_lr_hourly
 model_lr_hourly[MAPE <= MAPE_lag168,]
 ```
 
-When we model all hours data individually, we see that there are `r length(model_lr_hourly[MAPE <= MAPE_lag168,])` models that are better than the naïve approach. So, we still can go further with naïve approach, which means that weekly seasonality is more important than daily seasonality.
+When we model all hours data individually, we see that there are `r length(model_lr_hourly[MAPE <= MAPE_lag168,])` models that are better than the naïve approach. So, we still can say that naïve approach is a better approach, which means that weekly seasonality is more important than daily seasonality (or the importance of the weekly seaesonality is more than the importance of the hourly seasonality).
 
 ### 2.6 Task 4
 
-Now, we have some linear regression models for all hour. We can go further in this step. We can create more features for a model and use a penalized regression model for creating a more generalized model. We can use all seven day ago hourly consumption values to predict the next day's consumption. With these features we can create a Lasso Regression. In Lasso Regression, alpha is an important hyper parameter. So, we can use 10-fold cross validation to choose the best alpha value.
+Now, we have some linear regression models for all hour. We can go further in this step. We can create more features for a model and use a penalized regression model for creating a more generalized model. We can use all seven day ago hourly consumption values to predict the next day's consumption for every hour. So we will create 24 models with these features. We can create a Lasso Regression as a penalized regression. With adding L1 norm of the coefficients in the objective function, we can prevent the model from overfitting. In Lasso Regression, alpha is an important hyper parameter. So, we can use 10-fold cross validation to choose the best alpha value.
 
 ```{r cv.glmnet}
 X = as.matrix(electricity_wide[electricity$Test == 0, !c("Consumption", "Date", "Hour")])
@@ -296,8 +316,8 @@ plot(lasso_model)
 
 Now, we find the best alpha value for Lasso Regression, which is `r lambda_min`, and largest value of lambda such that error is within 1 standard error of the minimum, which is `r lambda_1se`. Now, we are ready to build a Lasso Regression for every hour.
 
-```{r lasso_hourly}
-model_lasso_hourly = data.table()
+```{r lasso_hourly_min}
+model_lasso_min_hourly = data.table()
 
 for (i in 0:23){
   X_train = electricity_wide[Hour == i & Date < '2020-11-01',]
@@ -312,24 +332,49 @@ for (i in 0:23){
                              lambda = lambda_min)
   predict_lasso_hour = predict(lasso_best_hourly, newx = X_test)
   MAPE_lasso_hour = calculate_mape(predict_lasso_hour, y_test)
-  model_lasso_hourly = rbind(model_lasso_hourly, data.table(Hour = i, MAPE = MAPE_lasso_hour))
+  model_lasso_min_hourly = rbind(model_lasso_min_hourly, data.table(Hour = i, MAPE = MAPE_lasso_hour))
 }
 
-model_lasso_hourly
-model_lasso_hourly[MAPE <= MAPE_lag168,]
+model_lasso_min_hourly
+model_lasso_min_hourly[MAPE <= MAPE_lag168,]
 ```
 
-Now, we have better MAPE results than the naïve approach. So, we can conclude that using all hourly values of seven and two days ago in Lasso Regression is a better approach to forecast the next day's consumption than naïve approach.
+Now, we have better MAPE results than the naïve approach. So, we can conclude that using all hourly values of seven and two days ago in Lasso Regression is a better approach to forecast the next day's consumption than naïve approach. Also, we can understand the importance of using more features in a model. If additional variables do not contribute to score, they will have zero coefficients. So, there is nothing wrong with using more features in a model.
+
+Also, we can do this test with 1se lambda value.
+
+```{r lasso_hourly_1se}
+model_lasso_1se_hourly = data.table()
+
+for (i in 0:23){
+  X_train = electricity_wide[Hour == i & Date < '2020-11-01',]
+  X_train = as.matrix(X_train[,3:50])
+  y_train = as.matrix(electricity_wide[Hour == i & Date < '2020-11-01', Consumption])
+  X_test = electricity_wide[Hour == i & Date >= '2020-11-01',]
+  X_test = as.matrix(X_test[,3:50])
+  y_test = as.matrix(electricity_wide[Hour == i & Date >= '2020-11-01', Consumption])
+  lasso_best_hourly = glmnet(X_train,
+                             y_train,
+                             alpha = 1,
+                             lambda = lambda_1se)
+  predict_lasso_hour = predict(lasso_best_hourly, newx = X_test)
+  MAPE_lasso_hour = calculate_mape(predict_lasso_hour, y_test)
+  model_lasso_1se_hourly = rbind(model_lasso_1se_hourly, data.table(Hour = i, MAPE = MAPE_lasso_hour))
+}
+
+model_lasso_1se_hourly
+```
+
+With `lambda_1se` value, we get `r sum(model_lasso_1se_hourly$MAPE <= model_lasso_min_hourly$MAPE)` better MAPE values than the model that use `lambda_min`. So, we can use `lambda_1se` rather than `lambda_min` value.
 
 ### 2.7 Task 5
 
 For a better solution, we can try the fused regression, which also adds the differences of consecutive coefficients with a multiplier. We can make an implementation with the help of _CVXR_ package. In this implementation, we are constructing models for every hour. It takes many time and memory, so we increased the maximum size to 400000.
 
 ```{r fused}
-lambda_1 = lambda_min
-lambda_2 = lambda_min
+lambda_1 = lambda_1se
+lambda_2 = lambda_1se
 beta <- Variable(48)
-memory.limit(size=4000000)
 model_fused_hourly = data.table()
 
 for (i in 0:23){
@@ -353,25 +398,29 @@ for (i in 0:23){
 model_fused_hourly
 ```
 
-When we calculate MAPE values, we get the similar results with Lasso Regression. This approach could have better result, but we couldn't apply a grid search for lambda values. For a further work could be to find a solution to come up with best lambda values. After this process we will not include the results of fused regression because of the same results.
+When we calculate MAPE values, we get the similar results with Lasso Regression. This approach could have better result, but we couldn't apply a grid search for lambda values. A further work could be to find a solution to come up with best lambda values. After this process we will not include the results of fused regression because of the same results.
 
 ### 2.8 Task 6
 
 Now, at the end of the task, we can plot all MAPE values in a boxplot.
 
 ```{r box plot}
-All_MAPE = data.table(MAPE = c(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly$MAPE, model_lasso_hourly$MAPE), Model = c('lag 168 naïve approach', 'lag 48 naïve approach', 'LR', paste(0:23, 'Hour_LR', sep = '_'), paste(0:23, 'Hour_Lasso', sep = '_')))
+All_MAPE = data.table(MAPE = c(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly$MAPE, model_lasso_min_hourly$MAPE, model_lasso_1se_hourly$MAPE), Model = c('lag 168 naïve approach', 'lag 48 naïve approach', 'LR', paste(0:23, 'Hour_LR', sep = '_'), paste(0:23, 'Hour_Lasso_Min', sep = '_'), paste(0:23, 'Hour_Lasso_1se', sep = '_')))
 ggplot(aes(y = MAPE), data = All_MAPE) +
   geom_boxplot()
 ```
 
-When we look at the results of all MAPE values, we see that almost half of the MAPE values are between 4 and 5. Most of these values are around 4. So, we can say that, if a model whose MAPE value is more than 5, it can be thought as an inefficient model respect to others. 
+When we look at the results of all MAPE values, we see that almost half of the MAPE values are between 2 and 4. Most of these values are around 3.5. So, we can say that, if a model whose MAPE value is more than 4, it can be thought as an inefficient model respect to others. 
 
 ```{r MAPE}
 head(setorder(All_MAPE, MAPE))
 ```
 
-When we look at the top MAPE values, they belong to  `r setorder(All_MAPE, MAPE)[1,2]`.
+When we look at the top MAPE values, they belong to  `r setorder(All_MAPE, MAPE)[1,2]`. At the end of the task, we can come up with some information like below:
+
+- In our data, weekly seasonality is more important than daily and hourly seasonality.
+- To use all hourly consumption of a day is a better approach to create a model. In this type of situations, we need to consider the penalized regression to reduce the chance of overfitting.
+- To use two-day and one-week before consumption information is a reliable process with respect to their MAPE values.
 
 ## REFERENCES
 - [EPIAS](https://seffaflik.epias.com.tr/)

@@ -1737,20 +1737,21 @@ body {
 <span id="cb2-4"><a href="#cb2-4"></a></span>
 <span id="cb2-5"><a href="#cb2-5"></a>transform_long =<span class="st"> </span><span class="cf">function</span>(data){</span>
 <span id="cb2-6"><a href="#cb2-6"></a>  long =<span class="st"> </span>data[,<span class="kw">c</span>(<span class="st">&quot;Lag_48&quot;</span>, <span class="st">&quot;Lag_168&quot;</span>) <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="kw">list</span>(<span class="kw">shift</span>(Consumption, <span class="dt">n =</span> <span class="dv">48</span>, <span class="dt">fill =</span> <span class="dv">0</span>), <span class="kw">shift</span>(Consumption, <span class="dt">n =</span> <span class="dv">168</span>, <span class="dt">fill =</span> <span class="dv">0</span>))]</span>
-<span id="cb2-7"><a href="#cb2-7"></a>  long[, <span class="kw">c</span>(<span class="st">&quot;Date&quot;</span>, <span class="st">&quot;Hour&quot;</span>, <span class="st">&quot;Lag_48&quot;</span>, <span class="st">&quot;Lag_168&quot;</span>, <span class="st">&quot;Consumption&quot;</span>)]</span>
-<span id="cb2-8"><a href="#cb2-8"></a>}</span>
-<span id="cb2-9"><a href="#cb2-9"></a></span>
-<span id="cb2-10"><a href="#cb2-10"></a>transform_wide =<span class="st"> </span><span class="cf">function</span>(data){</span>
-<span id="cb2-11"><a href="#cb2-11"></a>  lag_<span class="dv">48</span> =<span class="st"> </span><span class="kw">dcast</span>(data, Date <span class="op">~</span><span class="st"> </span>Hour, <span class="dt">fun =</span> mean, <span class="dt">value.var =</span> <span class="st">&#39;Lag_48&#39;</span>, <span class="dt">fill =</span> <span class="dv">0</span>)</span>
-<span id="cb2-12"><a href="#cb2-12"></a>  lag_<span class="dv">168</span> =<span class="st"> </span><span class="kw">dcast</span>(data, Date <span class="op">~</span><span class="st"> </span>Hour, <span class="dt">fun =</span> mean, <span class="dt">value.var =</span> <span class="st">&#39;Lag_168&#39;</span>, <span class="dt">fill =</span> <span class="dv">0</span>)</span>
-<span id="cb2-13"><a href="#cb2-13"></a>  <span class="kw">colnames</span>(lag_<span class="dv">48</span>) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;Date&quot;</span>, <span class="kw">paste</span>(<span class="st">&quot;Lag_day2_hour&quot;</span>, <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>))</span>
-<span id="cb2-14"><a href="#cb2-14"></a>  <span class="kw">colnames</span>(lag_<span class="dv">168</span>) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;Date&quot;</span>, <span class="kw">paste</span>(<span class="st">&quot;Lag_day7_hour&quot;</span>, <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>))</span>
-<span id="cb2-15"><a href="#cb2-15"></a>  wide =<span class="st"> </span>data <span class="op">%&gt;%</span></span>
-<span id="cb2-16"><a href="#cb2-16"></a><span class="st">    </span><span class="kw">left_join</span>(lag_<span class="dv">48</span>) <span class="op">%&gt;%</span></span>
-<span id="cb2-17"><a href="#cb2-17"></a><span class="st">    </span><span class="kw">left_join</span>(lag_<span class="dv">168</span>)</span>
-<span id="cb2-18"><a href="#cb2-18"></a>  wide =<span class="st"> </span>wide[,<span class="op">!</span><span class="kw">c</span>(<span class="st">&#39;Lag_48&#39;</span>, <span class="st">&#39;Lag_168&#39;</span>)]</span>
-<span id="cb2-19"><a href="#cb2-19"></a>  <span class="kw">data.table</span>(wide[,<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span><span class="op">:</span><span class="dv">51</span>,<span class="dv">3</span>)])</span>
-<span id="cb2-20"><a href="#cb2-20"></a>}</span></code></pre></div>
+<span id="cb2-7"><a href="#cb2-7"></a>  <span class="co"># We can remove 7 days from data, because 7 &lt;&lt; 1797.</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>  long[<span class="dv">169</span><span class="op">:</span><span class="kw">nrow</span>(long), <span class="kw">c</span>(<span class="st">&quot;Date&quot;</span>, <span class="st">&quot;Hour&quot;</span>, <span class="st">&quot;Lag_48&quot;</span>, <span class="st">&quot;Lag_168&quot;</span>, <span class="st">&quot;Consumption&quot;</span>)]</span>
+<span id="cb2-9"><a href="#cb2-9"></a>}</span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a>transform_wide =<span class="st"> </span><span class="cf">function</span>(data){</span>
+<span id="cb2-12"><a href="#cb2-12"></a>  lag_<span class="dv">48</span> =<span class="st"> </span><span class="kw">dcast</span>(data, Date <span class="op">~</span><span class="st"> </span>Hour, <span class="dt">fun =</span> mean, <span class="dt">value.var =</span> <span class="st">&#39;Lag_48&#39;</span>, <span class="dt">fill =</span> <span class="dv">0</span>)</span>
+<span id="cb2-13"><a href="#cb2-13"></a>  lag_<span class="dv">168</span> =<span class="st"> </span><span class="kw">dcast</span>(data, Date <span class="op">~</span><span class="st"> </span>Hour, <span class="dt">fun =</span> mean, <span class="dt">value.var =</span> <span class="st">&#39;Lag_168&#39;</span>, <span class="dt">fill =</span> <span class="dv">0</span>)</span>
+<span id="cb2-14"><a href="#cb2-14"></a>  <span class="kw">colnames</span>(lag_<span class="dv">48</span>) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;Date&quot;</span>, <span class="kw">paste</span>(<span class="st">&quot;Lag_day2_hour&quot;</span>, <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>))</span>
+<span id="cb2-15"><a href="#cb2-15"></a>  <span class="kw">colnames</span>(lag_<span class="dv">168</span>) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;Date&quot;</span>, <span class="kw">paste</span>(<span class="st">&quot;Lag_day7_hour&quot;</span>, <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>))</span>
+<span id="cb2-16"><a href="#cb2-16"></a>  wide =<span class="st"> </span>data <span class="op">%&gt;%</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a><span class="st">    </span><span class="kw">left_join</span>(lag_<span class="dv">48</span>) <span class="op">%&gt;%</span></span>
+<span id="cb2-18"><a href="#cb2-18"></a><span class="st">    </span><span class="kw">left_join</span>(lag_<span class="dv">168</span>)</span>
+<span id="cb2-19"><a href="#cb2-19"></a>  wide =<span class="st"> </span>wide[,<span class="op">!</span><span class="kw">c</span>(<span class="st">&#39;Lag_48&#39;</span>, <span class="st">&#39;Lag_168&#39;</span>)]</span>
+<span id="cb2-20"><a href="#cb2-20"></a>  <span class="kw">data.table</span>(wide[,<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span><span class="op">:</span><span class="dv">51</span>,<span class="dv">3</span>)])</span>
+<span id="cb2-21"><a href="#cb2-21"></a>}</span></code></pre></div>
 </div>
 <div id="data-manupilation" class="section level3">
 <h3>2.2 Data Manupilation</h3>
@@ -1870,10 +1871,24 @@ body {
 <pre><code>## [1] &quot;character&quot;</code></pre>
 <p>It should a numeric variable. So, we need to convert it to character. But, as we saw from the <code>head(electricity)</code> command, comma is used as decimal separator and period is used as a thousand separator. So, we can use <code>strsplit</code> function to solve the issue.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a>electricity[,Consumption <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">sapply</span>(<span class="kw">strsplit</span>(Consumption,<span class="st">&quot;</span><span class="ch">\\</span><span class="st">.|</span><span class="ch">\\</span><span class="st">,&quot;</span>),<span class="cf">function</span>(x){<span class="kw">ifelse</span>(<span class="kw">length</span>(x) <span class="op">==</span><span class="st"> </span><span class="dv">3</span>, <span class="kw">paste</span>(x[<span class="dv">1</span>], x[<span class="dv">2</span>], <span class="st">&#39;.&#39;</span>, x[<span class="dv">3</span>], <span class="dt">sep =</span> <span class="st">&#39;&#39;</span>), <span class="dv">0</span>)}))]</span></code></pre></div>
+<p>We need to check <code>Consumption</code> values whether there are 0 or not.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>electricity[Consumption <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, ]</span></code></pre></div>
+<pre><code>##          Date Hour Consumption            DateTime
+## 1: 2016-03-27    2           0 2016-03-27 02:00:00
+## 2: 2016-03-27    3           0 2016-03-27 03:00:00</code></pre>
+<p>As we can see, there are two zero values in <code>Consumption</code> column. We can assign the average consumption of that hour for zero values.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a>electricity[Consumption <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, Consumption <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="ot">NA</span>]</span>
+<span id="cb34-2"><a href="#cb34-2"></a>mean_<span class="dv">2</span> =<span class="st"> </span>electricity[Hour <span class="op">==</span><span class="st"> </span><span class="dv">2</span>, <span class="kw">mean</span>(Consumption, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)]</span>
+<span id="cb34-3"><a href="#cb34-3"></a>mean_<span class="dv">3</span> =<span class="st"> </span>electricity[Hour <span class="op">==</span><span class="st"> </span><span class="dv">3</span>, <span class="kw">mean</span>(Consumption, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)]</span>
+<span id="cb34-4"><a href="#cb34-4"></a></span>
+<span id="cb34-5"><a href="#cb34-5"></a>electricity[Date <span class="op">==</span><span class="st"> &#39;2016-03-27&#39;</span> <span class="op">&amp;</span><span class="st"> </span>Hour <span class="op">==</span><span class="st"> </span><span class="dv">2</span>, Consumption <span class="op">:</span><span class="er">=</span><span class="st"> </span>mean_<span class="dv">2</span>]</span>
+<span id="cb34-6"><a href="#cb34-6"></a>electricity[Date <span class="op">==</span><span class="st"> &#39;2016-03-27&#39;</span> <span class="op">&amp;</span><span class="st"> </span>Hour <span class="op">==</span><span class="st"> </span><span class="dv">3</span>, Consumption <span class="op">:</span><span class="er">=</span><span class="st"> </span>mean_<span class="dv">3</span>]</span>
+<span id="cb34-7"><a href="#cb34-7"></a>electricity[Consumption <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, ]</span></code></pre></div>
+<pre><code>## Empty data.table (0 rows and 4 cols): Date,Hour,Consumption,DateTime</code></pre>
 <p>Now, we solved all problems in the data. To easily identify the train and test data, we can create a column.</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>electricity[Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Test <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="dv">0</span>]</span>
-<span id="cb32-2"><a href="#cb32-2"></a>electricity[Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Test <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="dv">1</span>]</span>
-<span id="cb32-3"><a href="#cb32-3"></a><span class="kw">head</span>(electricity)</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>electricity[Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Test <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="dv">0</span>]</span>
+<span id="cb36-2"><a href="#cb36-2"></a>electricity[Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Test <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="dv">1</span>]</span>
+<span id="cb36-3"><a href="#cb36-3"></a><span class="kw">head</span>(electricity)</span></code></pre></div>
 <pre><code>##          Date Hour Consumption            DateTime Test
 ## 1: 2016-01-01    0    26277.24 2016-01-01 00:00:00    0
 ## 2: 2016-01-01    1    24991.82 2016-01-01 01:00:00    0
@@ -1881,131 +1896,132 @@ body {
 ## 4: 2016-01-01    3    22464.78 2016-01-01 03:00:00    0
 ## 5: 2016-01-01    4    22002.91 2016-01-01 04:00:00    0
 ## 6: 2016-01-01    5    21957.08 2016-01-01 05:00:00    0</code></pre>
-<p>We have reached final shape of the data. Throughout the assignment, we will use some formats of this data, which are in long and wide format. We can get these formatted data from the code below.</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a>electricity_long =<span class="st"> </span><span class="kw">transform_long</span>(electricity)</span>
-<span id="cb34-2"><a href="#cb34-2"></a><span class="kw">head</span>(electricity_long)</span></code></pre></div>
-<pre><code>##          Date Hour Lag_48 Lag_168 Consumption
-## 1: 2016-01-01    0      0       0    26277.24
-## 2: 2016-01-01    1      0       0    24991.82
-## 3: 2016-01-01    2      0       0    23532.61
-## 4: 2016-01-01    3      0       0    22464.78
-## 5: 2016-01-01    4      0       0    22002.91
-## 6: 2016-01-01    5      0       0    21957.08</code></pre>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>electricity_wide =<span class="st"> </span><span class="kw">transform_wide</span>(electricity_long)</span>
-<span id="cb36-2"><a href="#cb36-2"></a><span class="kw">head</span>(electricity_wide)</span></code></pre></div>
+<p>We have reached final shape of the data. Throughout the assignment, we will use some formats of this data, which are in long and wide format. We can get these formatted data from the code below. Also, we removed first 186 rows from <code>electricity</code> data, because we removed the rows with NAs in <code>electricity_long</code> data</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a>electricity_long =<span class="st"> </span><span class="kw">transform_long</span>(electricity)</span>
+<span id="cb38-2"><a href="#cb38-2"></a><span class="kw">head</span>(electricity_long)</span></code></pre></div>
+<pre><code>##          Date Hour   Lag_48  Lag_168 Consumption
+## 1: 2016-01-08    0 29189.27 26277.24    28602.02
+## 2: 2016-01-08    1 27614.02 24991.82    27112.37
+## 3: 2016-01-08    2 26578.97 23532.61    25975.34
+## 4: 2016-01-08    3 25719.19 22464.78    25315.55
+## 5: 2016-01-08    4 25864.63 22002.91    25128.15
+## 6: 2016-01-08    5 25918.59 21957.08    25356.22</code></pre>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>electricity_wide =<span class="st"> </span><span class="kw">transform_wide</span>(electricity_long)</span>
+<span id="cb40-2"><a href="#cb40-2"></a><span class="kw">head</span>(electricity_wide)</span></code></pre></div>
 <pre><code>##          Date Hour Lag_day2_hour_0 Lag_day2_hour_1 Lag_day2_hour_2
-## 1: 2016-01-01    0               0               0               0
-## 2: 2016-01-01    1               0               0               0
-## 3: 2016-01-01    2               0               0               0
-## 4: 2016-01-01    3               0               0               0
-## 5: 2016-01-01    4               0               0               0
-## 6: 2016-01-01    5               0               0               0
+## 1: 2016-01-08    0        29189.27        27614.02        26578.97
+## 2: 2016-01-08    1        29189.27        27614.02        26578.97
+## 3: 2016-01-08    2        29189.27        27614.02        26578.97
+## 4: 2016-01-08    3        29189.27        27614.02        26578.97
+## 5: 2016-01-08    4        29189.27        27614.02        26578.97
+## 6: 2016-01-08    5        29189.27        27614.02        26578.97
 ##    Lag_day2_hour_3 Lag_day2_hour_4 Lag_day2_hour_5 Lag_day2_hour_6
-## 1:               0               0               0               0
-## 2:               0               0               0               0
-## 3:               0               0               0               0
-## 4:               0               0               0               0
-## 5:               0               0               0               0
-## 6:               0               0               0               0
+## 1:        25719.19        25864.63        25918.59        27091.94
+## 2:        25719.19        25864.63        25918.59        27091.94
+## 3:        25719.19        25864.63        25918.59        27091.94
+## 4:        25719.19        25864.63        25918.59        27091.94
+## 5:        25719.19        25864.63        25918.59        27091.94
+## 6:        25719.19        25864.63        25918.59        27091.94
 ##    Lag_day2_hour_7 Lag_day2_hour_8 Lag_day2_hour_9 Lag_day2_hour_10
-## 1:               0               0               0                0
-## 2:               0               0               0                0
-## 3:               0               0               0                0
-## 4:               0               0               0                0
-## 5:               0               0               0                0
-## 6:               0               0               0                0
+## 1:        28533.05        33203.34        36257.22         37212.91
+## 2:        28533.05        33203.34        36257.22         37212.91
+## 3:        28533.05        33203.34        36257.22         37212.91
+## 4:        28533.05        33203.34        36257.22         37212.91
+## 5:        28533.05        33203.34        36257.22         37212.91
+## 6:        28533.05        33203.34        36257.22         37212.91
 ##    Lag_day2_hour_11 Lag_day2_hour_12 Lag_day2_hour_13 Lag_day2_hour_14
-## 1:                0                0                0                0
-## 2:                0                0                0                0
-## 3:                0                0                0                0
-## 4:                0                0                0                0
-## 5:                0                0                0                0
-## 6:                0                0                0                0
+## 1:         37844.74         36194.13         36542.73         36847.22
+## 2:         37844.74         36194.13         36542.73         36847.22
+## 3:         37844.74         36194.13         36542.73         36847.22
+## 4:         37844.74         36194.13         36542.73         36847.22
+## 5:         37844.74         36194.13         36542.73         36847.22
+## 6:         37844.74         36194.13         36542.73         36847.22
 ##    Lag_day2_hour_15 Lag_day2_hour_16 Lag_day2_hour_17 Lag_day2_hour_18
-## 1:                0                0                0                0
-## 2:                0                0                0                0
-## 3:                0                0                0                0
-## 4:                0                0                0                0
-## 5:                0                0                0                0
-## 6:                0                0                0                0
+## 1:         36433.88         37581.09         37304.52            35832
+## 2:         36433.88         37581.09         37304.52            35832
+## 3:         36433.88         37581.09         37304.52            35832
+## 4:         36433.88         37581.09         37304.52            35832
+## 5:         36433.88         37581.09         37304.52            35832
+## 6:         36433.88         37581.09         37304.52            35832
 ##    Lag_day2_hour_19 Lag_day2_hour_20 Lag_day2_hour_21 Lag_day2_hour_22
-## 1:                0                0                0                0
-## 2:                0                0                0                0
-## 3:                0                0                0                0
-## 4:                0                0                0                0
-## 5:                0                0                0                0
-## 6:                0                0                0                0
+## 1:         34499.94            33670         32931.12         32913.06
+## 2:         34499.94            33670         32931.12         32913.06
+## 3:         34499.94            33670         32931.12         32913.06
+## 4:         34499.94            33670         32931.12         32913.06
+## 5:         34499.94            33670         32931.12         32913.06
+## 6:         34499.94            33670         32931.12         32913.06
 ##    Lag_day2_hour_23 Lag_day7_hour_0 Lag_day7_hour_1 Lag_day7_hour_2
-## 1:                0               0               0               0
-## 2:                0               0               0               0
-## 3:                0               0               0               0
-## 4:                0               0               0               0
-## 5:                0               0               0               0
-## 6:                0               0               0               0
+## 1:         31450.65        26277.24        24991.82        23532.61
+## 2:         31450.65        26277.24        24991.82        23532.61
+## 3:         31450.65        26277.24        24991.82        23532.61
+## 4:         31450.65        26277.24        24991.82        23532.61
+## 5:         31450.65        26277.24        24991.82        23532.61
+## 6:         31450.65        26277.24        24991.82        23532.61
 ##    Lag_day7_hour_3 Lag_day7_hour_4 Lag_day7_hour_5 Lag_day7_hour_6
-## 1:               0               0               0               0
-## 2:               0               0               0               0
-## 3:               0               0               0               0
-## 4:               0               0               0               0
-## 5:               0               0               0               0
-## 6:               0               0               0               0
+## 1:        22464.78        22002.91        21957.08        22203.54
+## 2:        22464.78        22002.91        21957.08        22203.54
+## 3:        22464.78        22002.91        21957.08        22203.54
+## 4:        22464.78        22002.91        21957.08        22203.54
+## 5:        22464.78        22002.91        21957.08        22203.54
+## 6:        22464.78        22002.91        21957.08        22203.54
 ##    Lag_day7_hour_7 Lag_day7_hour_8 Lag_day7_hour_9 Lag_day7_hour_10
-## 1:               0               0               0                0
-## 2:               0               0               0                0
-## 3:               0               0               0                0
-## 4:               0               0               0                0
-## 5:               0               0               0                0
-## 6:               0               0               0                0
+## 1:        21844.16        23094.73        25202.27         27224.96
+## 2:        21844.16        23094.73        25202.27         27224.96
+## 3:        21844.16        23094.73        25202.27         27224.96
+## 4:        21844.16        23094.73        25202.27         27224.96
+## 5:        21844.16        23094.73        25202.27         27224.96
+## 6:        21844.16        23094.73        25202.27         27224.96
 ##    Lag_day7_hour_11 Lag_day7_hour_12 Lag_day7_hour_13 Lag_day7_hour_14
-## 1:                0                0                0                0
-## 2:                0                0                0                0
-## 3:                0                0                0                0
-## 4:                0                0                0                0
-## 5:                0                0                0                0
-## 6:                0                0                0                0
+## 1:         28908.04         28789.25          29367.7         29548.32
+## 2:         28908.04         28789.25          29367.7         29548.32
+## 3:         28908.04         28789.25          29367.7         29548.32
+## 4:         28908.04         28789.25          29367.7         29548.32
+## 5:         28908.04         28789.25          29367.7         29548.32
+## 6:         28908.04         28789.25          29367.7         29548.32
 ##    Lag_day7_hour_15 Lag_day7_hour_16 Lag_day7_hour_17 Lag_day7_hour_18
-## 1:                0                0                0                0
-## 2:                0                0                0                0
-## 3:                0                0                0                0
-## 4:                0                0                0                0
-## 5:                0                0                0                0
-## 6:                0                0                0                0
+## 1:         29390.89         30734.97         32048.02         31438.11
+## 2:         29390.89         30734.97         32048.02         31438.11
+## 3:         29390.89         30734.97         32048.02         31438.11
+## 4:         29390.89         30734.97         32048.02         31438.11
+## 5:         29390.89         30734.97         32048.02         31438.11
+## 6:         29390.89         30734.97         32048.02         31438.11
 ##    Lag_day7_hour_19 Lag_day7_hour_20 Lag_day7_hour_21 Lag_day7_hour_22
-## 1:                0                0                0                0
-## 2:                0                0                0                0
-## 3:                0                0                0                0
-## 4:                0                0                0                0
-## 5:                0                0                0                0
-## 6:                0                0                0                0
+## 1:         30728.47         30166.14         29461.28         29242.83
+## 2:         30728.47         30166.14         29461.28         29242.83
+## 3:         30728.47         30166.14         29461.28         29242.83
+## 4:         30728.47         30166.14         29461.28         29242.83
+## 5:         30728.47         30166.14         29461.28         29242.83
+## 6:         30728.47         30166.14         29461.28         29242.83
 ##    Lag_day7_hour_23 Consumption
-## 1:                0    26277.24
-## 2:                0    24991.82
-## 3:                0    23532.61
-## 4:                0    22464.78
-## 5:                0    22002.91
-## 6:                0    21957.08</code></pre>
+## 1:         28069.09    28602.02
+## 2:         28069.09    27112.37
+## 3:         28069.09    25975.34
+## 4:         28069.09    25315.55
+## 5:         28069.09    25128.15
+## 6:         28069.09    25356.22</code></pre>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>electricity =<span class="st"> </span>electricity[<span class="dv">169</span><span class="op">:</span><span class="kw">nrow</span>(electricity),]</span></code></pre></div>
 <p>We are ready to accomplish the tasks.</p>
 </div>
 <div id="task-1" class="section level3">
 <h3>2.3 Task 1</h3>
 <p>When we try to forecast the electricity consumption, we can use the consumption of values of 48 and 168 hours ago. To assign the value of these numbers would be our naïve approach. Our So, our MAPE values will be like these:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a>predict_lag168 =<span class="st"> </span><span class="kw">lag</span>(electricity<span class="op">$</span>Consumption, <span class="dt">n =</span> <span class="dv">168</span>)[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>]</span>
-<span id="cb38-2"><a href="#cb38-2"></a>predict_lag48 =<span class="st"> </span><span class="kw">lag</span>(electricity<span class="op">$</span>Consumption, <span class="dt">n =</span> <span class="dv">48</span>)[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>]</span>
-<span id="cb38-3"><a href="#cb38-3"></a></span>
-<span id="cb38-4"><a href="#cb38-4"></a>MAPE_lag168 =<span class="st"> </span><span class="kw">calculate_mape</span>(<span class="dt">pred =</span> predict_lag168, <span class="dt">true =</span> electricity<span class="op">$</span>Consumption[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
-<span id="cb38-5"><a href="#cb38-5"></a>MAPE_lag48 =<span class="st"> </span><span class="kw">calculate_mape</span>(<span class="dt">pred =</span> predict_lag48, <span class="dt">true =</span> electricity<span class="op">$</span>Consumption[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
-<span id="cb38-6"><a href="#cb38-6"></a></span>
-<span id="cb38-7"><a href="#cb38-7"></a>MAPE_lag168</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a>predict_lag168 =<span class="st"> </span><span class="kw">lag</span>(electricity<span class="op">$</span>Consumption, <span class="dt">n =</span> <span class="dv">168</span>)[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>]</span>
+<span id="cb43-2"><a href="#cb43-2"></a>predict_lag48 =<span class="st"> </span><span class="kw">lag</span>(electricity<span class="op">$</span>Consumption, <span class="dt">n =</span> <span class="dv">48</span>)[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>]</span>
+<span id="cb43-3"><a href="#cb43-3"></a></span>
+<span id="cb43-4"><a href="#cb43-4"></a>MAPE_lag168 =<span class="st"> </span><span class="kw">calculate_mape</span>(<span class="dt">pred =</span> predict_lag168, <span class="dt">true =</span> electricity<span class="op">$</span>Consumption[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
+<span id="cb43-5"><a href="#cb43-5"></a>MAPE_lag48 =<span class="st"> </span><span class="kw">calculate_mape</span>(<span class="dt">pred =</span> predict_lag48, <span class="dt">true =</span> electricity<span class="op">$</span>Consumption[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
+<span id="cb43-6"><a href="#cb43-6"></a></span>
+<span id="cb43-7"><a href="#cb43-7"></a>MAPE_lag168</span></code></pre></div>
 <pre><code>## [1] 3.449188</code></pre>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>MAPE_lag48</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>MAPE_lag48</span></code></pre></div>
 <pre><code>## [1] 8.060315</code></pre>
 <p>MAPE of lag 168 is 3.4491885 and MAPE of lag 48 is 8.0603145. Lag 168 naïve approach performs better than the lag 48 naïve approach. We can compare all other model with lag 168 naïve approach. With this approach, we see that weekly seasonality is more important than the two-day seasonality.</p>
 </div>
 <div id="task-2" class="section level3">
 <h3>2.4 Task 2</h3>
-<p>Rather than using the consumption of seven days ago, we can create a model that uses the lag 168 and lag 48 values as input. Our model can be linear regression. For the lag values of NA rows, we will impute 0.</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>model_lr =<span class="st"> </span><span class="kw">lm</span>(Consumption <span class="op">~</span><span class="st"> </span>Lag_<span class="dv">168</span> <span class="op">+</span><span class="st"> </span>Lag_<span class="dv">48</span>, <span class="dt">data =</span> electricity_long[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>])</span>
-<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">summary</span>(model_lr)</span></code></pre></div>
+<p>Rather than using the consumption of seven days ago, we can create a model that uses the lag 168 and lag 48 values as input. Our model can be a linear regression model.</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a>model_lr =<span class="st"> </span><span class="kw">lm</span>(Consumption <span class="op">~</span><span class="st"> </span>Lag_<span class="dv">168</span> <span class="op">+</span><span class="st"> </span>Lag_<span class="dv">48</span>, <span class="dt">data =</span> electricity_long[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>])</span>
+<span id="cb47-2"><a href="#cb47-2"></a><span class="kw">summary</span>(model_lr)</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## lm(formula = Consumption ~ Lag_168 + Lag_48, data = electricity_long[electricity$Test == 
@@ -2013,246 +2029,307 @@ body {
 ## 
 ## Residuals:
 ##      Min       1Q   Median       3Q      Max 
-## -26028.5  -1196.2    -66.8   1112.2  30083.4 
+## -17126.2   -984.1     -0.5   1016.7  16105.4 
 ## 
 ## Coefficients:
 ##              Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) 4.305e+03  9.129e+01   47.16   &lt;2e-16 ***
-## Lag_168     5.152e-01  3.227e-03  159.67   &lt;2e-16 ***
-## Lag_48      3.556e-01  3.402e-03  104.53   &lt;2e-16 ***
+## (Intercept) 1.564e+03  8.341e+01   18.76   &lt;2e-16 ***
+## Lag_168     6.439e-01  3.090e-03  208.34   &lt;2e-16 ***
+## Lag_48      3.084e-01  3.093e-03   99.69   &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 2739 on 42381 degrees of freedom
-## Multiple R-squared:  0.7056, Adjusted R-squared:  0.7056 
-## F-statistic: 5.079e+04 on 2 and 42381 DF,  p-value: &lt; 2.2e-16</code></pre>
+## Residual standard error: 2387 on 42213 degrees of freedom
+## Multiple R-squared:  0.7759, Adjusted R-squared:  0.7759 
+## F-statistic: 7.306e+04 on 2 and 42213 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p>When we look at the summary of the model, we see that everything seems fine to use this model. Now, we will make predictions for test data and calculate MAPE.</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a>predict_lr =<span class="st"> </span><span class="kw">predict</span>(model_lr, <span class="dt">newdata =</span> electricity_long[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
-<span id="cb44-2"><a href="#cb44-2"></a>MAPE_lr =<span class="st"> </span><span class="kw">calculate_mape</span>(<span class="dt">pred =</span> predict_lr, <span class="dt">true =</span> electricity_long<span class="op">$</span>Consumption[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
-<span id="cb44-3"><a href="#cb44-3"></a>MAPE_lr</span></code></pre></div>
-<pre><code>## [1] 4.756185</code></pre>
-<p>When we compare the MAPE value of this model with lag 168 naïve approach, it is better to use the naïve approach than this linear regression.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a>predict_lr =<span class="st"> </span><span class="kw">predict</span>(model_lr, <span class="dt">newdata =</span> electricity_long[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
+<span id="cb49-2"><a href="#cb49-2"></a>MAPE_lr =<span class="st"> </span><span class="kw">calculate_mape</span>(<span class="dt">pred =</span> predict_lr, <span class="dt">true =</span> electricity_long<span class="op">$</span>Consumption[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>])</span>
+<span id="cb49-3"><a href="#cb49-3"></a>MAPE_lr</span></code></pre></div>
+<pre><code>## [1] 4.228197</code></pre>
+<p>When we compare the MAPE value of this model with lag 168 naïve approach, it is better to use the naïve approach than this linear regression. So, it means that out model is not good enough than just predicting the value of last week.</p>
 </div>
 <div id="task-3" class="section level3">
 <h3>2.5 Task 3</h3>
 <p>In the linear regression model, we didn’t divide the data respect to hours. So, our approach assumes that every hour will have the same coefficient. If this is not true, we need to model each hour separately.</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a>model_lr_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
-<span id="cb46-2"><a href="#cb46-2"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
-<span id="cb46-3"><a href="#cb46-3"></a>  model_lr_hour =<span class="st"> </span><span class="kw">lm</span>(Consumption <span class="op">~</span><span class="st"> </span>Lag_<span class="dv">168</span> <span class="op">+</span><span class="st"> </span>Lag_<span class="dv">48</span>, <span class="dt">data =</span> electricity_long[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>,])</span>
-<span id="cb46-4"><a href="#cb46-4"></a>  predict_lr_hour =<span class="st"> </span><span class="kw">predict</span>(model_lr_hour, <span class="dt">newdata =</span> electricity_long[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>,])</span>
-<span id="cb46-5"><a href="#cb46-5"></a>  MAPE_lr_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_lr_hour, electricity_long[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, Consumption])</span>
-<span id="cb46-6"><a href="#cb46-6"></a>  model_lr_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_lr_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_lr_hour))</span>
-<span id="cb46-7"><a href="#cb46-7"></a>}</span>
-<span id="cb46-8"><a href="#cb46-8"></a>model_lr_hourly</span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1"></a>model_lr_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
+<span id="cb51-2"><a href="#cb51-2"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
+<span id="cb51-3"><a href="#cb51-3"></a>  model_lr_hour =<span class="st"> </span><span class="kw">lm</span>(Consumption <span class="op">~</span><span class="st"> </span>Lag_<span class="dv">168</span> <span class="op">+</span><span class="st"> </span>Lag_<span class="dv">48</span>, <span class="dt">data =</span> electricity_long[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>,])</span>
+<span id="cb51-4"><a href="#cb51-4"></a>  predict_lr_hour =<span class="st"> </span><span class="kw">predict</span>(model_lr_hour, <span class="dt">newdata =</span> electricity_long[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>,])</span>
+<span id="cb51-5"><a href="#cb51-5"></a>  MAPE_lr_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_lr_hour, electricity_long[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, Consumption])</span>
+<span id="cb51-6"><a href="#cb51-6"></a>  model_lr_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_lr_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_lr_hour))</span>
+<span id="cb51-7"><a href="#cb51-7"></a>}</span>
+<span id="cb51-8"><a href="#cb51-8"></a>model_lr_hourly</span></code></pre></div>
 <pre><code>##     Hour     MAPE
-##  1:    0 3.678393
-##  2:    1 3.702847
-##  3:    2 3.789068
-##  4:    3 3.618018
-##  5:    4 3.679186
-##  6:    5 3.819373
-##  7:    6 3.919723
-##  8:    7 4.508144
-##  9:    8 5.388642
-## 10:    9 5.936427
-## 11:   10 6.499046
-## 12:   11 6.697600
-## 13:   12 6.912956
-## 14:   13 7.038832
-## 15:   14 6.895449
-## 16:   15 6.514189
-## 17:   16 5.708957
-## 18:   17 5.510472
-## 19:   18 4.891727
-## 20:   19 4.325487
-## 21:   20 3.809173
-## 22:   21 3.686838
-## 23:   22 3.588589
-## 24:   23 3.810316
+##  1:    0 3.262965
+##  2:    1 3.283087
+##  3:    2 3.422231
+##  4:    3 3.206994
+##  5:    4 3.183023
+##  6:    5 3.187450
+##  7:    6 3.148057
+##  8:    7 3.776119
+##  9:    8 4.672350
+## 10:    9 5.484825
+## 11:   10 6.087343
+## 12:   11 6.273932
+## 13:   12 6.544300
+## 14:   13 6.684703
+## 15:   14 6.481529
+## 16:   15 6.083015
+## 17:   16 5.147396
+## 18:   17 4.608824
+## 19:   18 3.736631
+## 20:   19 3.433788
+## 21:   20 3.164353
+## 22:   21 3.166258
+## 23:   22 3.166973
+## 24:   23 3.386736
 ##     Hour     MAPE</code></pre>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a>model_lr_hourly[MAPE <span class="op">&lt;=</span><span class="st"> </span>MAPE_lag168,]</span></code></pre></div>
-<pre><code>## Empty data.table (0 rows and 2 cols): Hour,MAPE</code></pre>
-<p>When we model all hours data individually, we see that there are 2 models that are better than the naïve approach. So, we still can go further with naïve approach, which means that weekly seasonality is more important than daily seasonality.</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a>model_lr_hourly[MAPE <span class="op">&lt;=</span><span class="st"> </span>MAPE_lag168,]</span></code></pre></div>
+<pre><code>##     Hour     MAPE
+##  1:    0 3.262965
+##  2:    1 3.283087
+##  3:    2 3.422231
+##  4:    3 3.206994
+##  5:    4 3.183023
+##  6:    5 3.187450
+##  7:    6 3.148057
+##  8:   19 3.433788
+##  9:   20 3.164353
+## 10:   21 3.166258
+## 11:   22 3.166973
+## 12:   23 3.386736</code></pre>
+<p>When we model all hours data individually, we see that there are 2 models that are better than the naïve approach. So, we still can say that naïve approach is a better approach, which means that weekly seasonality is more important than daily seasonality (or the importance of the weekly seaesonality is more than the importance of the hourly seasonality).</p>
 </div>
 <div id="task-4" class="section level3">
 <h3>2.6 Task 4</h3>
-<p>Now, we have some linear regression models for all hour. We can go further in this step. We can create more features for a model and use a penalized regression model for creating a more generalized model. We can use all seven day ago hourly consumption values to predict the next day’s consumption. With these features we can create a Lasso Regression. In Lasso Regression, alpha is an important hyper parameter. So, we can use 10-fold cross validation to choose the best alpha value.</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1"></a>X =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="op">!</span><span class="kw">c</span>(<span class="st">&quot;Consumption&quot;</span>, <span class="st">&quot;Date&quot;</span>, <span class="st">&quot;Hour&quot;</span>)])</span>
-<span id="cb50-2"><a href="#cb50-2"></a>y =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="st">&quot;Consumption&quot;</span>])</span>
-<span id="cb50-3"><a href="#cb50-3"></a></span>
-<span id="cb50-4"><a href="#cb50-4"></a>lasso_cv =<span class="st"> </span><span class="kw">cv.glmnet</span>(X, y)</span>
-<span id="cb50-5"><a href="#cb50-5"></a>lasso_cv</span></code></pre></div>
+<p>Now, we have some linear regression models for all hour. We can go further in this step. We can create more features for a model and use a penalized regression model for creating a more generalized model. We can use all seven day ago hourly consumption values to predict the next day’s consumption for every hour. So we will create 24 models with these features. We can create a Lasso Regression as a penalized regression. With adding L1 norm of the coefficients in the objective function, we can prevent the model from overfitting. In Lasso Regression, alpha is an important hyper parameter. So, we can use 10-fold cross validation to choose the best alpha value.</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a>X =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="op">!</span><span class="kw">c</span>(<span class="st">&quot;Consumption&quot;</span>, <span class="st">&quot;Date&quot;</span>, <span class="st">&quot;Hour&quot;</span>)])</span>
+<span id="cb55-2"><a href="#cb55-2"></a>y =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="st">&quot;Consumption&quot;</span>])</span>
+<span id="cb55-3"><a href="#cb55-3"></a></span>
+<span id="cb55-4"><a href="#cb55-4"></a>lasso_cv =<span class="st"> </span><span class="kw">cv.glmnet</span>(X, y)</span>
+<span id="cb55-5"><a href="#cb55-5"></a>lasso_cv</span></code></pre></div>
 <pre><code>## 
 ## Call:  cv.glmnet(x = X, y = y) 
 ## 
 ## Measure: Mean-Squared Error 
 ## 
 ##     Lambda  Measure    SE Nonzero
-## min  0.231 15671962 81272      44
-## 1se  2.155 15745918 81057      34</code></pre>
-<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">plot</span>(lasso_cv)</span></code></pre></div>
-<p><img src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a>lambda_min =<span class="st"> </span>lasso_cv<span class="op">$</span>lambda.min</span>
-<span id="cb53-2"><a href="#cb53-2"></a>lambda_1se =<span class="st"> </span>lasso_cv<span class="op">$</span>lambda<span class="fl">.1</span>se</span></code></pre></div>
+## min  0.251 15137654 91504      47
+## 1se  4.098 15226949 93666      25</code></pre>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1"></a><span class="kw">plot</span>(lasso_cv)</span></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAAA6lBMVEUAAAAAADoAAGYAOjoAOmYAOpAAZrY6AAA6ADo6OgA6Ojo6OmY6OpA6ZmY6ZpA6ZrY6kJA6kLY6kNtmAABmAGZmOgBmOjpmOpBmZjpmZmZmZpBmZrZmkJBmkLZmkNtmtrZmtttmtv+QOgCQOjqQZjqQZmaQZpCQkDqQkGaQkJCQkLaQtraQttuQtv+Q2/+pqam2ZgC2Zjq2kDq2kGa2tpC2tra2ttu227a229u22/+2///bkDrbkGbbtmbbtpDbtrbb25Db27bb29vb2//b////AAD/tmb/tpD/25D/27b/29v//7b//9v///8D9xAYAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nO3d/WPTSJ6gcRkCXshNuCUXrt13zAYWdmYWttvpEBbaHXoIiS8v9v//75xKlu2yJdmqr6okVdXz+WEmpG1FqcRP9FpO5gAAkaTrFQAAXxFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACECCgACBFQABAioAAgREABQIiAAoAQAQUAIQIKAEIEFACEPA/o7TB5k30wSTa8lC5nx2dkC3o4fvS72SK+vUq/gcevr/cteZ/Z+XO1oKOv6099fzdMkoH+GdFySpYsWx/FfIBKnja7VMt+fro9aKbLyQh/9ErFz24X81WfvV3/otddUclzFiSjYfQc+aoJf3Ws8jugD8eJlYCul1P9GdmC0t8Osx/y6tdp0HCFLofLwXixXPSZZHiKyyl+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" width="672" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a>lambda_min =<span class="st"> </span>lasso_cv<span class="op">$</span>lambda.min</span>
+<span id="cb58-2"><a href="#cb58-2"></a>lambda_1se =<span class="st"> </span>lasso_cv<span class="op">$</span>lambda<span class="fl">.1</span>se</span></code></pre></div>
 <p>Also, we can use the <em>train</em> function to perform cross validation. You can find a simple code below.</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1"></a><span class="kw">set.seed</span>(<span class="dv">123</span>) </span>
-<span id="cb54-2"><a href="#cb54-2"></a>control =<span class="st"> </span><span class="kw">trainControl</span>(<span class="dt">method =</span><span class="st">&quot;cv&quot;</span>, <span class="dt">number =</span> <span class="dv">10</span>) </span>
-<span id="cb54-3"><a href="#cb54-3"></a>Grid =<span class="st"> </span><span class="kw">expand.grid</span>(<span class="dt">alpha =</span> <span class="dv">1</span>, </span>
-<span id="cb54-4"><a href="#cb54-4"></a>                   <span class="dt">lambda =</span> <span class="kw">seq</span>(<span class="fl">0.001</span>, <span class="fl">0.1</span>, <span class="dt">by =</span> <span class="fl">0.0001</span>))</span>
-<span id="cb54-5"><a href="#cb54-5"></a></span>
-<span id="cb54-6"><a href="#cb54-6"></a>X1 =<span class="st"> </span>electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">3</span><span class="op">:</span><span class="dv">50</span>]</span>
-<span id="cb54-7"><a href="#cb54-7"></a>y1 =<span class="st"> </span><span class="kw">unlist</span>(electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">51</span>])</span>
-<span id="cb54-8"><a href="#cb54-8"></a></span>
-<span id="cb54-9"><a href="#cb54-9"></a>lasso_model =<span class="st"> </span><span class="kw">train</span>(<span class="dt">x =</span> X1, </span>
-<span id="cb54-10"><a href="#cb54-10"></a>                    <span class="dt">y =</span> y1,</span>
-<span id="cb54-11"><a href="#cb54-11"></a>                    <span class="dt">method =</span> <span class="st">&quot;glmnet&quot;</span>, </span>
-<span id="cb54-12"><a href="#cb54-12"></a>                    <span class="dt">trControl =</span> control, </span>
-<span id="cb54-13"><a href="#cb54-13"></a>                    <span class="dt">tuneGrid =</span> Grid </span>
-<span id="cb54-14"><a href="#cb54-14"></a>                    ) </span>
-<span id="cb54-15"><a href="#cb54-15"></a>lasso_model</span>
-<span id="cb54-16"><a href="#cb54-16"></a><span class="kw">plot</span>(lasso_model)</span></code></pre></div>
-<p>Now, we find the best alpha value for Lasso Regression, which is 0.2310196, and largest value of lambda such that error is within 1 standard error of the minimum, which is 2.1544963. Now, we are ready to build a Lasso Regression for every hour.</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a>model_lasso_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
-<span id="cb55-2"><a href="#cb55-2"></a></span>
-<span id="cb55-3"><a href="#cb55-3"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
-<span id="cb55-4"><a href="#cb55-4"></a>  X_train =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
-<span id="cb55-5"><a href="#cb55-5"></a>  X_train =<span class="st"> </span><span class="kw">as.matrix</span>(X_train[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
-<span id="cb55-6"><a href="#cb55-6"></a>  y_train =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
-<span id="cb55-7"><a href="#cb55-7"></a>  X_test =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
-<span id="cb55-8"><a href="#cb55-8"></a>  X_test =<span class="st"> </span><span class="kw">as.matrix</span>(X_test[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
-<span id="cb55-9"><a href="#cb55-9"></a>  y_test =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
-<span id="cb55-10"><a href="#cb55-10"></a>  lasso_best_hourly =<span class="st"> </span><span class="kw">glmnet</span>(X_train,</span>
-<span id="cb55-11"><a href="#cb55-11"></a>                             y_train,</span>
-<span id="cb55-12"><a href="#cb55-12"></a>                             <span class="dt">alpha =</span> <span class="dv">1</span>,</span>
-<span id="cb55-13"><a href="#cb55-13"></a>                             <span class="dt">lambda =</span> lambda_min)</span>
-<span id="cb55-14"><a href="#cb55-14"></a>  predict_lasso_hour =<span class="st"> </span><span class="kw">predict</span>(lasso_best_hourly, <span class="dt">newx =</span> X_test)</span>
-<span id="cb55-15"><a href="#cb55-15"></a>  MAPE_lasso_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_lasso_hour, y_test)</span>
-<span id="cb55-16"><a href="#cb55-16"></a>  model_lasso_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_lasso_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_lasso_hour))</span>
-<span id="cb55-17"><a href="#cb55-17"></a>}</span>
-<span id="cb55-18"><a href="#cb55-18"></a></span>
-<span id="cb55-19"><a href="#cb55-19"></a>model_lasso_hourly</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1"></a><span class="kw">set.seed</span>(<span class="dv">123</span>) </span>
+<span id="cb59-2"><a href="#cb59-2"></a>control =<span class="st"> </span><span class="kw">trainControl</span>(<span class="dt">method =</span><span class="st">&quot;cv&quot;</span>, <span class="dt">number =</span> <span class="dv">10</span>) </span>
+<span id="cb59-3"><a href="#cb59-3"></a>Grid =<span class="st"> </span><span class="kw">expand.grid</span>(<span class="dt">alpha =</span> <span class="dv">1</span>, </span>
+<span id="cb59-4"><a href="#cb59-4"></a>                   <span class="dt">lambda =</span> <span class="kw">seq</span>(<span class="fl">0.001</span>, <span class="fl">0.1</span>, <span class="dt">by =</span> <span class="fl">0.0001</span>))</span>
+<span id="cb59-5"><a href="#cb59-5"></a></span>
+<span id="cb59-6"><a href="#cb59-6"></a>X1 =<span class="st"> </span>electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">3</span><span class="op">:</span><span class="dv">50</span>]</span>
+<span id="cb59-7"><a href="#cb59-7"></a>y1 =<span class="st"> </span><span class="kw">unlist</span>(electricity_wide[electricity<span class="op">$</span>Test <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">51</span>])</span>
+<span id="cb59-8"><a href="#cb59-8"></a></span>
+<span id="cb59-9"><a href="#cb59-9"></a>lasso_model =<span class="st"> </span><span class="kw">train</span>(<span class="dt">x =</span> X1, </span>
+<span id="cb59-10"><a href="#cb59-10"></a>                    <span class="dt">y =</span> y1,</span>
+<span id="cb59-11"><a href="#cb59-11"></a>                    <span class="dt">method =</span> <span class="st">&quot;glmnet&quot;</span>, </span>
+<span id="cb59-12"><a href="#cb59-12"></a>                    <span class="dt">trControl =</span> control, </span>
+<span id="cb59-13"><a href="#cb59-13"></a>                    <span class="dt">tuneGrid =</span> Grid </span>
+<span id="cb59-14"><a href="#cb59-14"></a>                    ) </span>
+<span id="cb59-15"><a href="#cb59-15"></a>lasso_model</span>
+<span id="cb59-16"><a href="#cb59-16"></a><span class="kw">plot</span>(lasso_model)</span></code></pre></div>
+<p>Now, we find the best alpha value for Lasso Regression, which is 0.2514232, and largest value of lambda such that error is within 1 standard error of the minimum, which is 4.0975724. Now, we are ready to build a Lasso Regression for every hour.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1"></a>model_lasso_min_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
+<span id="cb60-2"><a href="#cb60-2"></a></span>
+<span id="cb60-3"><a href="#cb60-3"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
+<span id="cb60-4"><a href="#cb60-4"></a>  X_train =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
+<span id="cb60-5"><a href="#cb60-5"></a>  X_train =<span class="st"> </span><span class="kw">as.matrix</span>(X_train[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
+<span id="cb60-6"><a href="#cb60-6"></a>  y_train =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
+<span id="cb60-7"><a href="#cb60-7"></a>  X_test =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
+<span id="cb60-8"><a href="#cb60-8"></a>  X_test =<span class="st"> </span><span class="kw">as.matrix</span>(X_test[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
+<span id="cb60-9"><a href="#cb60-9"></a>  y_test =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
+<span id="cb60-10"><a href="#cb60-10"></a>  lasso_best_hourly =<span class="st"> </span><span class="kw">glmnet</span>(X_train,</span>
+<span id="cb60-11"><a href="#cb60-11"></a>                             y_train,</span>
+<span id="cb60-12"><a href="#cb60-12"></a>                             <span class="dt">alpha =</span> <span class="dv">1</span>,</span>
+<span id="cb60-13"><a href="#cb60-13"></a>                             <span class="dt">lambda =</span> lambda_min)</span>
+<span id="cb60-14"><a href="#cb60-14"></a>  predict_lasso_hour =<span class="st"> </span><span class="kw">predict</span>(lasso_best_hourly, <span class="dt">newx =</span> X_test)</span>
+<span id="cb60-15"><a href="#cb60-15"></a>  MAPE_lasso_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_lasso_hour, y_test)</span>
+<span id="cb60-16"><a href="#cb60-16"></a>  model_lasso_min_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_lasso_min_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_lasso_hour))</span>
+<span id="cb60-17"><a href="#cb60-17"></a>}</span>
+<span id="cb60-18"><a href="#cb60-18"></a></span>
+<span id="cb60-19"><a href="#cb60-19"></a>model_lasso_min_hourly</span></code></pre></div>
 <pre><code>##     Hour     MAPE
-##  1:    0 1.277025
-##  2:    1 1.371010
-##  3:    2 1.311171
-##  4:    3 1.220775
-##  5:    4 1.282426
-##  6:    5 1.267193
-##  7:    6 1.494024
-##  8:    7 1.735515
-##  9:    8 2.533834
-## 10:    9 3.397328
-## 11:   10 3.904116
-## 12:   11 4.119297
-## 13:   12 4.386334
-## 14:   13 4.246339
-## 15:   14 4.090581
-## 16:   15 3.566930
-## 17:   16 2.719675
-## 18:   17 2.072694
-## 19:   18 1.506748
-## 20:   19 1.495439
-## 21:   20 1.487056
-## 22:   21 1.557903
-## 23:   22 1.460220
-## 24:   23 1.694184
+##  1:    0 1.431607
+##  2:    1 1.601526
+##  3:    2 1.532868
+##  4:    3 1.426414
+##  5:    4 1.496572
+##  6:    5 1.452218
+##  7:    6 1.738520
+##  8:    7 1.809298
+##  9:    8 2.553041
+## 10:    9 3.600364
+## 11:   10 4.107356
+## 12:   11 4.375388
+## 13:   12 4.707008
+## 14:   13 4.538688
+## 15:   14 4.377782
+## 16:   15 3.855284
+## 17:   16 2.953702
+## 18:   17 2.094769
+## 19:   18 1.653995
+## 20:   19 1.561845
+## 21:   20 1.644764
+## 22:   21 1.684498
+## 23:   22 1.603239
+## 24:   23 1.822050
 ##     Hour     MAPE</code></pre>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1"></a>model_lasso_hourly[MAPE <span class="op">&lt;=</span><span class="st"> </span>MAPE_lag168,]</span></code></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1"></a>model_lasso_min_hourly[MAPE <span class="op">&lt;=</span><span class="st"> </span>MAPE_lag168,]</span></code></pre></div>
 <pre><code>##     Hour     MAPE
-##  1:    0 1.277025
-##  2:    1 1.371010
-##  3:    2 1.311171
-##  4:    3 1.220775
-##  5:    4 1.282426
-##  6:    5 1.267193
-##  7:    6 1.494024
-##  8:    7 1.735515
-##  9:    8 2.533834
-## 10:    9 3.397328
-## 11:   16 2.719675
-## 12:   17 2.072694
-## 13:   18 1.506748
-## 14:   19 1.495439
-## 15:   20 1.487056
-## 16:   21 1.557903
-## 17:   22 1.460220
-## 18:   23 1.694184</code></pre>
-<p>Now, we have better MAPE results than the naïve approach. So, we can conclude that using all hourly values of seven and two days ago in Lasso Regression is a better approach to forecast the next day’s consumption than naïve approach.</p>
+##  1:    0 1.431607
+##  2:    1 1.601526
+##  3:    2 1.532868
+##  4:    3 1.426414
+##  5:    4 1.496572
+##  6:    5 1.452218
+##  7:    6 1.738520
+##  8:    7 1.809298
+##  9:    8 2.553041
+## 10:   16 2.953702
+## 11:   17 2.094769
+## 12:   18 1.653995
+## 13:   19 1.561845
+## 14:   20 1.644764
+## 15:   21 1.684498
+## 16:   22 1.603239
+## 17:   23 1.822050</code></pre>
+<p>Now, we have better MAPE results than the naïve approach. So, we can conclude that using all hourly values of seven and two days ago in Lasso Regression is a better approach to forecast the next day’s consumption than naïve approach. Also, we can understand the importance of using more features in a model. If additional variables do not contribute to score, they will have zero coefficients. So, there is nothing wrong with using more features in a model.</p>
+<p>Also, we can do this test with 1se lambda value.</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1"></a>model_lasso_1se_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
+<span id="cb64-2"><a href="#cb64-2"></a></span>
+<span id="cb64-3"><a href="#cb64-3"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
+<span id="cb64-4"><a href="#cb64-4"></a>  X_train =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
+<span id="cb64-5"><a href="#cb64-5"></a>  X_train =<span class="st"> </span><span class="kw">as.matrix</span>(X_train[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
+<span id="cb64-6"><a href="#cb64-6"></a>  y_train =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
+<span id="cb64-7"><a href="#cb64-7"></a>  X_test =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
+<span id="cb64-8"><a href="#cb64-8"></a>  X_test =<span class="st"> </span><span class="kw">as.matrix</span>(X_test[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
+<span id="cb64-9"><a href="#cb64-9"></a>  y_test =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
+<span id="cb64-10"><a href="#cb64-10"></a>  lasso_best_hourly =<span class="st"> </span><span class="kw">glmnet</span>(X_train,</span>
+<span id="cb64-11"><a href="#cb64-11"></a>                             y_train,</span>
+<span id="cb64-12"><a href="#cb64-12"></a>                             <span class="dt">alpha =</span> <span class="dv">1</span>,</span>
+<span id="cb64-13"><a href="#cb64-13"></a>                             <span class="dt">lambda =</span> lambda_1se)</span>
+<span id="cb64-14"><a href="#cb64-14"></a>  predict_lasso_hour =<span class="st"> </span><span class="kw">predict</span>(lasso_best_hourly, <span class="dt">newx =</span> X_test)</span>
+<span id="cb64-15"><a href="#cb64-15"></a>  MAPE_lasso_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_lasso_hour, y_test)</span>
+<span id="cb64-16"><a href="#cb64-16"></a>  model_lasso_1se_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_lasso_1se_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_lasso_hour))</span>
+<span id="cb64-17"><a href="#cb64-17"></a>}</span>
+<span id="cb64-18"><a href="#cb64-18"></a></span>
+<span id="cb64-19"><a href="#cb64-19"></a>model_lasso_1se_hourly</span></code></pre></div>
+<pre><code>##     Hour     MAPE
+##  1:    0 1.413776
+##  2:    1 1.495850
+##  3:    2 1.497366
+##  4:    3 1.329660
+##  5:    4 1.364129
+##  6:    5 1.360599
+##  7:    6 1.611892
+##  8:    7 1.779541
+##  9:    8 2.514758
+## 10:    9 3.610501
+## 11:   10 4.191388
+## 12:   11 4.392779
+## 13:   12 4.637329
+## 14:   13 4.508188
+## 15:   14 4.287304
+## 16:   15 3.818651
+## 17:   16 2.928886
+## 18:   17 2.040241
+## 19:   18 1.542927
+## 20:   19 1.498631
+## 21:   20 1.564333
+## 22:   21 1.605032
+## 23:   22 1.468159
+## 24:   23 1.719005
+##     Hour     MAPE</code></pre>
+<p>With <code>lambda_1se</code> value, we get 21 better MAPE values than the model that use <code>lambda_min</code>. So, we can use <code>lambda_1se</code> rather than <code>lambda_min</code> value.</p>
 </div>
 <div id="task-5" class="section level3">
 <h3>2.7 Task 5</h3>
 <p>For a better solution, we can try the fused regression, which also adds the differences of consecutive coefficients with a multiplier. We can make an implementation with the help of <em>CVXR</em> package. In this implementation, we are constructing models for every hour. It takes many time and memory, so we increased the maximum size to 400000.</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1"></a>lambda_<span class="dv">1</span> =<span class="st"> </span>lambda_min</span>
-<span id="cb59-2"><a href="#cb59-2"></a>lambda_<span class="dv">2</span> =<span class="st"> </span>lambda_min</span>
-<span id="cb59-3"><a href="#cb59-3"></a>beta &lt;-<span class="st"> </span><span class="kw">Variable</span>(<span class="dv">48</span>)</span>
-<span id="cb59-4"><a href="#cb59-4"></a><span class="kw">memory.limit</span>(<span class="dt">size=</span><span class="dv">4000000</span>)</span></code></pre></div>
-<pre><code>## [1] 4e+06</code></pre>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1"></a>model_fused_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
-<span id="cb61-2"><a href="#cb61-2"></a></span>
-<span id="cb61-3"><a href="#cb61-3"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
-<span id="cb61-4"><a href="#cb61-4"></a>  X_train =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
-<span id="cb61-5"><a href="#cb61-5"></a>  X_train =<span class="st"> </span><span class="kw">as.matrix</span>(X_train[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
-<span id="cb61-6"><a href="#cb61-6"></a>  y_train =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
-<span id="cb61-7"><a href="#cb61-7"></a>  X_test =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
-<span id="cb61-8"><a href="#cb61-8"></a>  X_test =<span class="st"> </span><span class="kw">as.matrix</span>(X_test[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
-<span id="cb61-9"><a href="#cb61-9"></a>  y_test =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
-<span id="cb61-10"><a href="#cb61-10"></a>  </span>
-<span id="cb61-11"><a href="#cb61-11"></a>  obj &lt;-<span class="st"> </span><span class="kw">sum</span>((y_train <span class="op">-</span><span class="st"> </span>X_train <span class="op">%*%</span><span class="st"> </span>beta)<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span><span class="kw">abs</span>(lambda_<span class="dv">2</span>) <span class="op">*</span><span class="st"> </span><span class="kw">sum</span>(beta<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span><span class="kw">abs</span>(lambda_<span class="dv">1</span>) <span class="op">*</span><span class="st"> </span><span class="kw">abs</span>(<span class="kw">p_norm</span>(<span class="kw">diff</span>(<span class="dt">x =</span> beta, <span class="dt">differences =</span> <span class="dv">1</span>), <span class="dv">1</span>))</span>
-<span id="cb61-12"><a href="#cb61-12"></a>  prob &lt;-<span class="st"> </span><span class="kw">Problem</span>(<span class="kw">Minimize</span>(obj))</span>
-<span id="cb61-13"><a href="#cb61-13"></a>  result &lt;-<span class="st"> </span><span class="kw">solve</span>(prob)</span>
-<span id="cb61-14"><a href="#cb61-14"></a>  </span>
-<span id="cb61-15"><a href="#cb61-15"></a>  betas =<span class="st"> </span>result<span class="op">$</span><span class="kw">getValue</span>(beta)</span>
-<span id="cb61-16"><a href="#cb61-16"></a>  predict_fused_hour =<span class="st"> </span>X_test <span class="op">%*%</span><span class="st"> </span>betas</span>
-<span id="cb61-17"><a href="#cb61-17"></a>  MAPE_fused_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_fused_hour, y_test)</span>
-<span id="cb61-18"><a href="#cb61-18"></a>  model_fused_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_fused_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_fused_hour))</span>
-<span id="cb61-19"><a href="#cb61-19"></a>}</span>
-<span id="cb61-20"><a href="#cb61-20"></a></span>
-<span id="cb61-21"><a href="#cb61-21"></a>model_fused_hourly</span></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1"></a>lambda_<span class="dv">1</span> =<span class="st"> </span>lambda_1se</span>
+<span id="cb66-2"><a href="#cb66-2"></a>lambda_<span class="dv">2</span> =<span class="st"> </span>lambda_1se</span>
+<span id="cb66-3"><a href="#cb66-3"></a>beta &lt;-<span class="st"> </span><span class="kw">Variable</span>(<span class="dv">48</span>)</span>
+<span id="cb66-4"><a href="#cb66-4"></a>model_fused_hourly =<span class="st"> </span><span class="kw">data.table</span>()</span>
+<span id="cb66-5"><a href="#cb66-5"></a></span>
+<span id="cb66-6"><a href="#cb66-6"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">23</span>){</span>
+<span id="cb66-7"><a href="#cb66-7"></a>  X_train =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
+<span id="cb66-8"><a href="#cb66-8"></a>  X_train =<span class="st"> </span><span class="kw">as.matrix</span>(X_train[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
+<span id="cb66-9"><a href="#cb66-9"></a>  y_train =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&lt;</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
+<span id="cb66-10"><a href="#cb66-10"></a>  X_test =<span class="st"> </span>electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>,]</span>
+<span id="cb66-11"><a href="#cb66-11"></a>  X_test =<span class="st"> </span><span class="kw">as.matrix</span>(X_test[,<span class="dv">3</span><span class="op">:</span><span class="dv">50</span>])</span>
+<span id="cb66-12"><a href="#cb66-12"></a>  y_test =<span class="st"> </span><span class="kw">as.matrix</span>(electricity_wide[Hour <span class="op">==</span><span class="st"> </span>i <span class="op">&amp;</span><span class="st"> </span>Date <span class="op">&gt;=</span><span class="st"> &#39;2020-11-01&#39;</span>, Consumption])</span>
+<span id="cb66-13"><a href="#cb66-13"></a>  </span>
+<span id="cb66-14"><a href="#cb66-14"></a>  obj &lt;-<span class="st"> </span><span class="kw">sum</span>((y_train <span class="op">-</span><span class="st"> </span>X_train <span class="op">%*%</span><span class="st"> </span>beta)<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span><span class="kw">abs</span>(lambda_<span class="dv">2</span>) <span class="op">*</span><span class="st"> </span><span class="kw">sum</span>(beta<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span><span class="kw">abs</span>(lambda_<span class="dv">1</span>) <span class="op">*</span><span class="st"> </span><span class="kw">abs</span>(<span class="kw">p_norm</span>(<span class="kw">diff</span>(<span class="dt">x =</span> beta, <span class="dt">differences =</span> <span class="dv">1</span>), <span class="dv">1</span>))</span>
+<span id="cb66-15"><a href="#cb66-15"></a>  prob &lt;-<span class="st"> </span><span class="kw">Problem</span>(<span class="kw">Minimize</span>(obj))</span>
+<span id="cb66-16"><a href="#cb66-16"></a>  result &lt;-<span class="st"> </span><span class="kw">solve</span>(prob)</span>
+<span id="cb66-17"><a href="#cb66-17"></a>  </span>
+<span id="cb66-18"><a href="#cb66-18"></a>  betas =<span class="st"> </span>result<span class="op">$</span><span class="kw">getValue</span>(beta)</span>
+<span id="cb66-19"><a href="#cb66-19"></a>  predict_fused_hour =<span class="st"> </span>X_test <span class="op">%*%</span><span class="st"> </span>betas</span>
+<span id="cb66-20"><a href="#cb66-20"></a>  MAPE_fused_hour =<span class="st"> </span><span class="kw">calculate_mape</span>(predict_fused_hour, y_test)</span>
+<span id="cb66-21"><a href="#cb66-21"></a>  model_fused_hourly =<span class="st"> </span><span class="kw">rbind</span>(model_fused_hourly, <span class="kw">data.table</span>(<span class="dt">Hour =</span> i, <span class="dt">MAPE =</span> MAPE_fused_hour))</span>
+<span id="cb66-22"><a href="#cb66-22"></a>}</span>
+<span id="cb66-23"><a href="#cb66-23"></a></span>
+<span id="cb66-24"><a href="#cb66-24"></a>model_fused_hourly</span></code></pre></div>
 <pre><code>##     Hour     MAPE
-##  1:    0 1.511219
-##  2:    1 1.680676
-##  3:    2 1.595720
-##  4:    3 1.492900
-##  5:    4 1.632412
-##  6:    5 1.591957
-##  7:    6 1.873835
-##  8:    7 2.023755
-##  9:    8 2.902628
-## 10:    9 3.724309
-## 11:   10 4.201411
-## 12:   11 4.485812
-## 13:   12 4.752590
-## 14:   13 4.637002
-## 15:   14 4.388764
-## 16:   15 3.854019
-## 17:   16 3.008850
-## 18:   17 2.277981
-## 19:   18 1.891701
-## 20:   19 1.818617
-## 21:   20 1.887245
-## 22:   21 1.917724
-## 23:   22 1.885623
-## 24:   23 2.022679
+##  1:    0 1.511307
+##  2:    1 1.701264
+##  3:    2 1.685723
+##  4:    3 1.540881
+##  5:    4 1.633683
+##  6:    5 1.586454
+##  7:    6 1.876632
+##  8:    7 1.986255
+##  9:    8 2.796006
+## 10:    9 3.764578
+## 11:   10 4.236912
+## 12:   11 4.490733
+## 13:   12 4.810245
+## 14:   13 4.628628
+## 15:   14 4.454267
+## 16:   15 3.907047
+## 17:   16 3.068590
+## 18:   17 2.202390
+## 19:   18 1.862727
+## 20:   19 1.787305
+## 21:   20 1.850368
+## 22:   21 1.891181
+## 23:   22 1.841462
+## 24:   23 1.982379
 ##     Hour     MAPE</code></pre>
-<p>When we calculate MAPE values, we get the similar results with Lasso Regression. This approach could have better result, but we couldn’t apply a grid search for lambda values. For a further work could be to find a solution to come up with best lambda values. After this process we will not include the results of fused regression because of the same results.</p>
+<p>When we calculate MAPE values, we get the similar results with Lasso Regression. This approach could have better result, but we couldn’t apply a grid search for lambda values. A further work could be to find a solution to come up with best lambda values. After this process we will not include the results of fused regression because of the same results.</p>
 </div>
 <div id="task-6" class="section level3">
 <h3>2.8 Task 6</h3>
 <p>Now, at the end of the task, we can plot all MAPE values in a boxplot.</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1"></a>All_MAPE =<span class="st"> </span><span class="kw">data.table</span>(<span class="dt">MAPE =</span> <span class="kw">c</span>(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly<span class="op">$</span>MAPE, model_lasso_hourly<span class="op">$</span>MAPE), <span class="dt">Model =</span> <span class="kw">c</span>(<span class="st">&#39;lag 168 naïve approach&#39;</span>, <span class="st">&#39;lag 48 naïve approach&#39;</span>, <span class="st">&#39;LR&#39;</span>, <span class="kw">paste</span>(<span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="st">&#39;Hour_LR&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>), <span class="kw">paste</span>(<span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="st">&#39;Hour_Lasso&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>)))</span>
-<span id="cb63-2"><a href="#cb63-2"></a><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">y =</span> MAPE), <span class="dt">data =</span> All_MAPE) <span class="op">+</span></span>
-<span id="cb63-3"><a href="#cb63-3"></a><span class="st">  </span><span class="kw">geom_boxplot</span>()</span></code></pre></div>
-<p><img src="data:image/png;base64,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Sne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV+a2Awq36u7dUy/gG85HoE1az9V6Lx+BZryvjE/hJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3ldGQCets0p3td5LQDPeV0ZAJ62zSne13ktAM95XRkAnrbNKd7XeS0Az3lfmWAF98sH9w+Ff/VhAb1rruVrvJaAZ7ytzpIB+8t7hwh8L6A1rPVfrvQQ0431ljhPQJ+8f3vrw6ZP/fbj3cwG9Wa3nar2XgGa8r8xxAvro8P1fPv/rw8M7AnqzWs/Vei8BzXhfmaME9NkHoD8Z/tb1FjRonVW6q/VeAprxvjJHCein7734AFRAb17ruVrvJaAZ7ytzlIA+vv/2x3/37w+Ht/7LF79091L8rwVfhyfHia0C+rMXX4V/9/NfElBOwpPjxPKAPnr+DUwfP33yga/C37jWc7Xey6fwGe8rc5RP4R99/qHnA1+Fv2mt52q9l4BmvK/MkX4P9PIjz+e/GSqgN6r1XK33EtCM95U5UkAvvwr/xf8ioDel9Vyt9xLQjPeVOdL3gV5+BPro4CPQG9Z6rtZ7CWjG+8oc508iff57nw9+82V4Ab0ZredqvZeAZryvzHEC+vj+4Ycf+ir8MbSeq/VeAprxvjJH+mlMj+5ffBvovdf+ROf1FjRonVW6q/VeAprxvjLH+nmgn/zsWUL/6MPXfv16Cxq0zird1XovAc14Xxk/kX7SOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0431lBHTSOqt0V+u9BDTjfWUEdNI6q3RX670ENON9ZQR00jqrdFfrvQQ0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" width="672" style="display: block; margin: auto;" /></p>
-<p>When we look at the results of all MAPE values, we see that almost half of the MAPE values are between 4 and 5. Most of these values are around 4. So, we can say that, if a model whose MAPE value is more than 5, it can be thought as an inefficient model respect to others.</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1"></a><span class="kw">head</span>(<span class="kw">setorder</span>(All_MAPE, MAPE))</span></code></pre></div>
-<pre><code>##        MAPE        Model
-## 1: 1.220775 3_Hour_Lasso
-## 2: 1.267193 5_Hour_Lasso
-## 3: 1.277025 0_Hour_Lasso
-## 4: 1.282426 4_Hour_Lasso
-## 5: 1.311171 2_Hour_Lasso
-## 6: 1.371010 1_Hour_Lasso</code></pre>
-<p>When we look at the top MAPE values, they belong to 3_Hour_Lasso.</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1"></a>All_MAPE =<span class="st"> </span><span class="kw">data.table</span>(<span class="dt">MAPE =</span> <span class="kw">c</span>(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly<span class="op">$</span>MAPE, model_lasso_min_hourly<span class="op">$</span>MAPE, model_lasso_1se_hourly<span class="op">$</span>MAPE), <span class="dt">Model =</span> <span class="kw">c</span>(<span class="st">&#39;lag 168 naïve approach&#39;</span>, <span class="st">&#39;lag 48 naïve approach&#39;</span>, <span class="st">&#39;LR&#39;</span>, <span class="kw">paste</span>(<span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="st">&#39;Hour_LR&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>), <span class="kw">paste</span>(<span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="st">&#39;Hour_Lasso_Min&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>), <span class="kw">paste</span>(<span class="dv">0</span><span class="op">:</span><span class="dv">23</span>, <span class="st">&#39;Hour_Lasso_1se&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>)))</span>
+<span id="cb68-2"><a href="#cb68-2"></a><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">y =</span> MAPE), <span class="dt">data =</span> All_MAPE) <span class="op">+</span></span>
+<span id="cb68-3"><a href="#cb68-3"></a><span class="st">  </span><span class="kw">geom_boxplot</span>()</span></code></pre></div>
+<p><img src="data:image/png;base64,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AZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r4wBnbTGKs3V2pcBzbivjAGdtMYqzdXalwHNuK+MAZ20xirN1dqXAc24r8xNDyjcqLt3z52AbziPQJu01tXal0egGfeV8RR+0hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474yBnTSGqs0V2tfBjTjvjIGdNIaqzRXa18GNOO+MgZ00hqrNFdrXwY0474ypxrQJx/cPxz+1Y8N6HVrrau1LwOacV+ZEw3oJ+8dLvyJAb1mrXW19mVAM+4rc5oBffL+4a0Pnz75n4d7Pzeg16u1rta+DGjGfWVOM6CPDt//5fNfHx7eMaDXq7Wu1r4MaMZ9ZU4yoM8egP5k+K2rJWjQGqs0V2tfBjTjvjInGdBP33vxANSAXr/Wulr7MqAZ95U5yYA+vv/2x//73x0Ob/3nz79091L814I34eQ4s9WA/uzFq/DvvvySAeUsnBxnlg/oo+dvYPr46ZMPvAp/7Vrrau3LU/iM+8qc5Cn8o5cPPR94Ff66tdbV2pcBzbivzIm+B3r5yPP5N0MN6LVqrau1LwOacV+ZEw3o5avwn/8XA3pdWutq7cuAZtxX5kTvA718BPro4BHoNWutq7UvA5pxX5nT/CTSy+99PvjNy/AG9Hq01tXalwHNuK/MaQb08f3DDz/0KvwptNbV2pcBzbivzIk+jenR/Yu3gd577Sc6r5agQWus0lytfRnQjPvKnOrzQD/52bMJ/eMPX/v61RI0aI1Vmqu1LwOacV8Zn0g/aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFfGQM6aY1Vmqu1LwOacV8ZAzppjVWaq7UvA5pxXxkDOmmNVZqrtS8DmnFf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" width="672" style="display: block; margin: auto;" /></p>
+<p>When we look at the results of all MAPE values, we see that almost half of the MAPE values are between 2 and 4. Most of these values are around 3.5. So, we can say that, if a model whose MAPE value is more than 4, it can be thought as an inefficient model respect to others.</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1"></a><span class="kw">head</span>(<span class="kw">setorder</span>(All_MAPE, MAPE))</span></code></pre></div>
+<pre><code>##        MAPE            Model
+## 1: 1.329660 3_Hour_Lasso_1se
+## 2: 1.360599 5_Hour_Lasso_1se
+## 3: 1.364129 4_Hour_Lasso_1se
+## 4: 1.413776 0_Hour_Lasso_1se
+## 5: 1.426414 3_Hour_Lasso_Min
+## 6: 1.431607 0_Hour_Lasso_Min</code></pre>
+<p>When we look at the top MAPE values, they belong to 3_Hour_Lasso_1se. At the end of the task, we can come up with some information like below:</p>
+<ul>
+<li>In our data, weekly seasonality is more important than daily and hourly seasonality.</li>
+<li>To use all hourly consumption of a day is a better approach to create a model. In this type of situations, we need to consider the penalized regression to reduce the chance of overfitting.</li>
+<li>To use two-day and one-week before consumption information is a reliable process with respect to their MAPE values.</li>
+</ul>
 </div>
 </div>
 <div id="references" class="section level2">
