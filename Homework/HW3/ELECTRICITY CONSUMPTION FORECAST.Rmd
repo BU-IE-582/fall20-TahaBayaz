@@ -417,3 +417,4 @@ When we look at the results of all MAPE values, we see that hourly lasso models 
 - [Regex Operation](https://stackoverflow.com/questions/36719061/removing-decimals-in-r)
 - [Analytics Edge](https://www.edx.org/course/the-analytics-edge)
 - [CVXR](http://stanford.edu/~anqif/papers/cvxr.pdf)
+- [Multiple boxplot in one graph](https://stackoverflow.com/questions/14604439/plot-multiple-boxplot-in-one-graph)
