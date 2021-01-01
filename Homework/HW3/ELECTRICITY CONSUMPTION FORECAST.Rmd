@@ -58,10 +58,6 @@ In this assignment, we want to forecast the electirict consumptions of the next 
 
 Throughout the assignment, we will use _data.table_, _tidyverse_, _lubridate_, _caret_ and _CVXR_ packages.
 
-```{r location, include=FALSE}
-setwd("C:/Users/Th/Desktop/YL/582/fall20-TahaBayaz/Homework/HW3")
-```
-
 ```{r packages, message=FALSE, warning=FALSE}
 #Required packages
 pti <- c("data.table", "tidyverse", "lubridate", "glmnet", "caret", "CVXR")
@@ -405,18 +401,11 @@ When we calculate MAPE values, we get the similar results with Lasso Regression.
 Now, at the end of the task, we can plot all MAPE values in a boxplot.
 
 ```{r box plot}
-All_MAPE = data.table(MAPE = c(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly$MAPE, model_lasso_min_hourly$MAPE, model_lasso_1se_hourly$MAPE), Model = c('lag 168 naïve approach', 'lag 48 naïve approach', 'LR', paste(0:23, 'Hour_LR', sep = '_'), paste(0:23, 'Hour_Lasso_Min', sep = '_'), paste(0:23, 'Hour_Lasso_1se', sep = '_')))
-ggplot(aes(y = MAPE), data = All_MAPE) +
-  geom_boxplot()
+All_MAPE = data.table(MAPE = c(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly$MAPE, model_lasso_min_hourly$MAPE, model_lasso_1se_hourly$MAPE), Model = c('Lag_168', 'Lag_48', 'LR', rep('Hourly_LR', 24), rep('Hourly_Lasso_Min', 24), rep('Hourly_Lasso_1se', 24 )))
+ggplot(data = All_MAPE, aes(x=Model, y=MAPE)) + geom_boxplot()
 ```
 
-When we look at the results of all MAPE values, we see that almost half of the MAPE values are between 2 and 4. Most of these values are around 3.5. So, we can say that, if a model whose MAPE value is more than 4, it can be thought as an inefficient model respect to others. 
-
-```{r MAPE}
-head(setorder(All_MAPE, MAPE))
-```
-
-When we look at the top MAPE values, they belong to  `r setorder(All_MAPE, MAPE)[1,2]`. At the end of the task, we can come up with some information like below:
+When we look at the results of all MAPE values, we see that hourly lasso models are far better than the others. As we explained before, it is the expected result thanks to using more features and regularization that tries to overcome the overfitting problem. At the end of the task, we can come up with some information like below:
 
 - In our data, weekly seasonality is more important than daily and hourly seasonality.
 - To use all hourly consumption of a day is a better approach to create a model. In this type of situations, we need to consider the penalized regression to reduce the chance of overfitting.
