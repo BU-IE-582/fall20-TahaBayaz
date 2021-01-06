@@ -6,7 +6,7 @@
 
 ## Homework 1
 
-You can find the homework from this [link](Homework/HW1/Sport-Forcasting.html)
+You can find the homework from these links: [R](Homework/HW1/Sport-Forcasting-R.html) / [Python](Homework/HW1/Sport-Forcasting-Python.html)
 
 ## Homework 2
 
