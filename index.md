@@ -10,8 +10,8 @@ You can find the homework from these links: [R](Homework/HW1/Sport-Forcasting-R.
 
 ## Homework 2
 
-You can find the homework from this [link](Homework/HW2/PCA-uWaveGestureLibrary.html)
+You can find the homework from this [R](Homework/HW2/PCA-uWaveGestureLibrary-R.html) / [Python](Homework/HW2/PCA-uWaveGestureLibrary-Python.html)
 
 ## Homework 3
 
-You can find the homework from this [link](Homework/HW3/ELECTRICITY-CONSUMPTION-FORECAST.html)
+You can find the homework from this [R](Homework/HW3/Electricity Consumption Forecast R.html) / [Python](Homework/HW3/Electricity Consumption Forecast Python.html)

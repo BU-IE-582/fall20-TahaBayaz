@@ -1,0 +1,420 @@
+---
+title: "Homework 3"
+author: "Taha BAYAZ"
+date: "01 01 2021"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+    theme: united
+    highlight: tango
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center", message = FALSE, warning = FALSE, error = FALSE)
+```
+
+<style>
+#TOC {
+ color: 
+ font-family: Calibri;
+ background-color:
+ border-color: darkred;
+}
+#header {
+ color: darkred;
+ font-family: Calibri;
+ background-color:
+}
+body {
+ font-family: Calibri;
+ }
+ 
+</style>
+
+# ELECTRICITY CONSUMPTION FORECAST
+
+## 1. INTRODUCTION
+
+### 1.1 Data
+
+The data that we collected is about the electricity consumption from 1st of January, 2016 till the 1st of December, 2020. The data have data, hour and electricity consumption(MWh) as variables. This data can be reached from this [link](https://seffaflik.epias.com.tr/transparency/tuketim/gerceklesen-tuketim/gercek-zamanli-tuketim.xhtml)
+
+### 1.2 Objective
+
+In this assignment, we want to forecast the electirict consumptions of the next day's consumptions. In all tasks, we will use the data from 1st of November, 2020 till the end as test data. In this assignment, our performance metric will be mean absolute percentage error (MAPE).
+
+## 2. TASKS
+
+### 2.1 Packages and Funcitons
+
+Throughout the assignment, we will use _data.table_, _tidyverse_, _lubridate_, _caret_ and _CVXR_ packages.
+
+```{r packages, message=FALSE, warning=FALSE}
+#Required packages
+pti <- c("data.table", "tidyverse", "lubridate", "glmnet", "caret", "CVXR")
+pti <- pti[!(pti %in% installed.packages())]
+if(length(pti)>0){
+    install.packages(pti)
+}
+
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(glmnet)
+library(caret)
+library(CVXR)
+```
+
+When we are calculating the MAPE, we will use _calculate_mape_ function. When we want to get the long or wide format of the data, we will use _transform_long_ and _transform_wide_ functions.
+
+```{r functions}
+calculate_mape = function(pred, true){
+  mean(abs(pred - true)/true) * 100
+}
+
+transform_long = function(data){
+  long = data[,c("Lag_48", "Lag_168") := list(shift(Consumption, n = 48, fill = 0), shift(Consumption, n = 168, fill = 0))]
+  # We can remove 7 days from data, because 7 << 1797.
+  long[169:nrow(long), c("Date", "Hour", "Lag_48", "Lag_168", "Consumption")]
+}
+
+transform_wide = function(data){
+  lag_48 = dcast(data, Date ~ Hour, fun = mean, value.var = 'Lag_48', fill = 0)
+  lag_168 = dcast(data, Date ~ Hour, fun = mean, value.var = 'Lag_168', fill = 0)
+  colnames(lag_48) = c("Date", paste("Lag_day2_hour", 0:23, sep = '_'))
+  colnames(lag_168) = c("Date", paste("Lag_day7_hour", 0:23, sep = '_'))
+  wide = data %>%
+    left_join(lag_48) %>%
+    left_join(lag_168)
+  wide = wide[,!c('Lag_48', 'Lag_168')]
+  data.table(wide[,c(1,2,4:51,3)])
+}
+```
+
+### 2.2 Data Manupilation
+
+Before starting tasks, we need to import the data. After importing, we change the column names.
+
+```{r data from local}
+electricity = fread("GercekZamanliTuketim.csv")
+colnames(electricity) = c('Date', 'Hour', 'Consumption')
+head(electricity)
+```
+
+As we can see, the `Date` column is character type column. So need to change the type of the variable and check that do we have information for all days from 1st of January, 2016 till the 1st of December, 2020.
+
+```{r date control}
+electricity[,DateTime := dmy_hm(paste(Date, Hour))]
+electricity[,Date := dmy(Date)]
+
+days = unique(electricity$Date)
+head(days)
+
+lag_1_day = lag(days, n = 1)
+sum(lag_1_day[2:length(lag_1_day)] != days[1:length(days) - 1])
+days[length(days)]
+```
+
+From the result, we can say that we have electricity consumption information for all days. Now, we need to check whether we have electricity consumption information for all hours.
+
+```{r hour control}
+electricity[,Hour := hour(DateTime)]
+
+hours = unique(electricity$Hour)
+hours
+
+lag_1_hour = lag(hours, n = 1)
+sum(lag_1_hour[2:length(lag_1_hour)] != hours[1:length(hours) - 1])
+hours[length(hours)]
+```
+
+From the result, we can say that we have electricity consumption information for all days. Now, we need to check whether we have electricity consumption information for all hours of all days.
+
+```{r date-hour control1}
+head(table(electricity$Date))
+sum(table(electricity$Date) != 24)
+```
+
+We see that for all days we have 24 hours.
+
+```{r date-hour control2}
+table(electricity$Hour)
+```
+
+As we can see from the table, there is a missing row for hour 3 and there is an addition for hour 4. As we have checked in the chunk before the previous one, we know that there 24 hours for all days. So, these errors are in the same date.
+
+```{r date-hour control3}
+which(table(electricity$Date, electricity$Hour==4)[,2] == 2)
+```
+
+As we can see, the problem is in the _2016-03-27_ date.
+
+```{r date-hour control4}
+electricity[electricity$Date == "2016-03-27",]
+```
+
+As we can see from the table above, we have some problem for this day. The error is due to the the daylight savings program Turkey used to apply in those years. To correct the error, we will change the hour from 4 to 3 and replace the `Consumption` column with zero.
+
+```{r date-hour control5}
+electricity[which(electricity$Date == '2016-03-27' & electricity$Hour == '4')[1], c("Hour", "Consumption") := list(3, "0,00")]
+electricity[which(electricity$Date == '2016-03-27' & electricity$Hour == '3'), DateTime := ymd_hm(paste(Date, "03:00"))]
+electricity[electricity$Date == '2016-03-27',]
+```
+
+Now we finished the control related with any DateTime information. We need to check the type of the consumption.
+
+```{r consumption control1}
+typeof(electricity$Consumption[1])
+```
+
+It should a numeric variable. So, we need to convert it to character. But, as we saw from the `head(electricity)` command, comma is used as decimal separator and period is used as a thousand separator. So, we can use `strsplit` function to solve the issue.
+
+```{r consumption control2}
+electricity[,Consumption := as.numeric(sapply(strsplit(Consumption,"\\.|\\,"),function(x){ifelse(length(x) == 3, paste(x[1], x[2], '.', x[3], sep = ''), 0)}))]
+```
+
+We need to check `Consumption` values whether there are 0 or not.
+
+```{r}
+electricity[Consumption == 0, ]
+```
+
+As we can see, there are two zero values in `Consumption` column. We can assign the average consumption of that hour for zero values.
+
+```{r}
+electricity[Consumption == 0, Consumption := NA]
+mean_2 = electricity[Hour == 2, mean(Consumption, na.rm = TRUE)]
+mean_3 = electricity[Hour == 3, mean(Consumption, na.rm = TRUE)]
+
+electricity[Date == '2016-03-27' & Hour == 2, Consumption := mean_2]
+electricity[Date == '2016-03-27' & Hour == 3, Consumption := mean_3]
+electricity[Consumption == 0, ]
+```
+
+Now, we solved all problems in the data. To easily identify the train and test data, we can create a column.
+
+```{r Train/Test_split}
+electricity[Date < '2020-11-01', Test := 0]
+electricity[Date >= '2020-11-01', Test := 1]
+head(electricity)
+```
+
+We have reached final shape of the data. Throughout the assignment, we will use some formats of this data, which are in long and wide format. We can get these formatted data from the code below. Also, we removed first 186 rows from `electricity` data, because we removed the rows with NAs in `electricity_long` data
+
+```{r data format}
+electricity_long = transform_long(electricity)
+head(electricity_long)
+electricity_wide = transform_wide(electricity_long)
+head(electricity_wide)
+electricity = electricity[169:nrow(electricity),]
+```
+
+We are ready to accomplish the tasks.
+
+### 2.3 Task 1
+
+When we try to forecast the electricity consumption, we can use the consumption of values of 48 and 168 hours ago. To assign the value of these numbers would be our naïve approach. Our So, our MAPE values will be like these:
+
+```{r naïve MAPE}
+predict_lag168 = lag(electricity$Consumption, n = 168)[electricity$Test == 1]
+predict_lag48 = lag(electricity$Consumption, n = 48)[electricity$Test == 1]
+
+MAPE_lag168 = calculate_mape(pred = predict_lag168, true = electricity$Consumption[electricity$Test == 1])
+MAPE_lag48 = calculate_mape(pred = predict_lag48, true = electricity$Consumption[electricity$Test == 1])
+
+MAPE_lag168
+MAPE_lag48
+```
+
+MAPE of lag 168 is `r MAPE_lag168` and MAPE of lag 48 is `r MAPE_lag48`. Lag 168 naïve approach performs better than the lag 48 naïve approach. We can compare all other model with lag 168 naïve approach. With this approach, we see that weekly seasonality is more important than the two-day seasonality.
+
+### 2.4 Task 2
+
+Rather than using the consumption of seven days ago, we can create a model that uses the lag 168 and lag 48 values as input. Our model can be a linear regression model.
+
+```{r lr model}
+model_lr = lm(Consumption ~ Lag_168 + Lag_48, data = electricity_long[electricity$Test == 0])
+summary(model_lr)
+```
+
+When we look at the summary of the model, we see that everything seems fine to use this model. Now, we will make predictions for test data and calculate MAPE.
+
+```{r lr MAPE}
+predict_lr = predict(model_lr, newdata = electricity_long[electricity$Test == 1])
+MAPE_lr = calculate_mape(pred = predict_lr, true = electricity_long$Consumption[electricity$Test == 1])
+MAPE_lr
+```
+
+When we compare the MAPE value of this model with lag 168 naïve approach, it is better to use the naïve approach than this linear regression. So, it means that out model is not good enough than just predicting the value of last week.
+
+### 2.5 Task 3
+
+In the linear regression model, we didn't divide the data respect to hours. So, our approach assumes that every hour will have the same coefficient. If this is not true, we need to model each hour separately.
+
+```{r hourly_model}
+model_lr_hourly = data.table()
+for (i in 0:23){
+  model_lr_hour = lm(Consumption ~ Lag_168 + Lag_48, data = electricity_long[Hour == i & electricity$Test == 0,])
+  predict_lr_hour = predict(model_lr_hour, newdata = electricity_long[Hour == i & electricity$Test == 1,])
+  MAPE_lr_hour = calculate_mape(predict_lr_hour, electricity_long[Hour == i & electricity$Test == 1, Consumption])
+  model_lr_hourly = rbind(model_lr_hourly, data.table(Hour = i, MAPE = MAPE_lr_hour))
+}
+model_lr_hourly
+model_lr_hourly[MAPE <= MAPE_lag168,]
+```
+
+When we model all hours data individually, we see that there are `r length(model_lr_hourly[MAPE <= MAPE_lag168,])` models that are better than the naïve approach. So, we still can say that naïve approach is a better approach, which means that weekly seasonality is more important than daily seasonality (or the importance of the weekly seaesonality is more than the importance of the hourly seasonality).
+
+### 2.6 Task 4
+
+Now, we have some linear regression models for all hour. We can go further in this step. We can create more features for a model and use a penalized regression model for creating a more generalized model. We can use all seven day ago hourly consumption values to predict the next day's consumption for every hour. So we will create 24 models with these features. We can create a Lasso Regression as a penalized regression. With adding L1 norm of the coefficients in the objective function, we can prevent the model from overfitting. In Lasso Regression, alpha is an important hyper parameter. So, we can use 10-fold cross validation to choose the best alpha value.
+
+```{r cv.glmnet}
+X = as.matrix(electricity_wide[electricity$Test == 0, !c("Consumption", "Date", "Hour")])
+y = as.matrix(electricity_wide[electricity$Test == 0, "Consumption"])
+
+lasso_cv = cv.glmnet(X, y)
+lasso_cv
+plot(lasso_cv)
+lambda_min = lasso_cv$lambda.min
+lambda_1se = lasso_cv$lambda.1se
+```
+
+Also, we can use the _train_ function to perform cross validation. You can find a simple code below.
+
+```{r train, eval = FALSE}
+set.seed(123) 
+control = trainControl(method ="cv", number = 10) 
+Grid = expand.grid(alpha = 1, 
+                   lambda = seq(0.001, 0.1, by = 0.0001))
+
+X1 = electricity_wide[electricity$Test == 0, 3:50]
+y1 = unlist(electricity_wide[electricity$Test == 0, 51])
+
+lasso_model = train(x = X1, 
+                    y = y1,
+                    method = "glmnet", 
+                    trControl = control, 
+                    tuneGrid = Grid 
+                    ) 
+lasso_model
+plot(lasso_model)
+```
+
+Now, we find the best alpha value for Lasso Regression, which is `r lambda_min`, and largest value of lambda such that error is within 1 standard error of the minimum, which is `r lambda_1se`. Now, we are ready to build a Lasso Regression for every hour.
+
+```{r lasso_hourly_min}
+model_lasso_min_hourly = data.table()
+
+for (i in 0:23){
+  X_train = electricity_wide[Hour == i & Date < '2020-11-01',]
+  X_train = as.matrix(X_train[,3:50])
+  y_train = as.matrix(electricity_wide[Hour == i & Date < '2020-11-01', Consumption])
+  X_test = electricity_wide[Hour == i & Date >= '2020-11-01',]
+  X_test = as.matrix(X_test[,3:50])
+  y_test = as.matrix(electricity_wide[Hour == i & Date >= '2020-11-01', Consumption])
+  lasso_best_hourly = glmnet(X_train,
+                             y_train,
+                             alpha = 1,
+                             lambda = lambda_min)
+  predict_lasso_hour = predict(lasso_best_hourly, newx = X_test)
+  MAPE_lasso_hour = calculate_mape(predict_lasso_hour, y_test)
+  model_lasso_min_hourly = rbind(model_lasso_min_hourly, data.table(Hour = i, MAPE = MAPE_lasso_hour))
+}
+
+model_lasso_min_hourly
+model_lasso_min_hourly[MAPE <= MAPE_lag168,]
+```
+
+Now, we have better MAPE results than the naïve approach. So, we can conclude that using all hourly values of seven and two days ago in Lasso Regression is a better approach to forecast the next day's consumption than naïve approach. Also, we can understand the importance of using more features in a model. If additional variables do not contribute to score, they will have zero coefficients. So, there is nothing wrong with using more features in a model.
+
+Also, we can do this test with 1se lambda value.
+
+```{r lasso_hourly_1se}
+model_lasso_1se_hourly = data.table()
+
+for (i in 0:23){
+  X_train = electricity_wide[Hour == i & Date < '2020-11-01',]
+  X_train = as.matrix(X_train[,3:50])
+  y_train = as.matrix(electricity_wide[Hour == i & Date < '2020-11-01', Consumption])
+  X_test = electricity_wide[Hour == i & Date >= '2020-11-01',]
+  X_test = as.matrix(X_test[,3:50])
+  y_test = as.matrix(electricity_wide[Hour == i & Date >= '2020-11-01', Consumption])
+  lasso_best_hourly = glmnet(X_train,
+                             y_train,
+                             alpha = 1,
+                             lambda = lambda_1se)
+  predict_lasso_hour = predict(lasso_best_hourly, newx = X_test)
+  MAPE_lasso_hour = calculate_mape(predict_lasso_hour, y_test)
+  model_lasso_1se_hourly = rbind(model_lasso_1se_hourly, data.table(Hour = i, MAPE = MAPE_lasso_hour))
+}
+
+model_lasso_1se_hourly
+```
+
+With `lambda_1se` value, we get `r sum(model_lasso_1se_hourly$MAPE <= model_lasso_min_hourly$MAPE)` better MAPE values than the model that use `lambda_min`. So, we can use `lambda_1se` rather than `lambda_min` value.
+
+### 2.7 Task 5
+
+For a better solution, we can try the fused regression, which also adds the differences of consecutive coefficients with a multiplier. We can make an implementation with the help of _CVXR_ package. In this implementation, we are constructing models for every hour.
+
+```{r fused}
+lambda_1 = lambda_1se
+lambda_2 = lambda_1se
+beta <- Variable(48)
+model_fused_hourly = data.table()
+
+for (i in 0:23){
+  X_train = electricity_wide[Hour == i & Date < '2020-11-01',]
+  X_train = as.matrix(X_train[,3:50])
+  y_train = as.matrix(electricity_wide[Hour == i & Date < '2020-11-01', Consumption])
+  X_test = electricity_wide[Hour == i & Date >= '2020-11-01',]
+  X_test = as.matrix(X_test[,3:50])
+  y_test = as.matrix(electricity_wide[Hour == i & Date >= '2020-11-01', Consumption])
+  
+  obj <- sum((y_train - X_train %*% beta)^2) + abs(lambda_2) * sum(beta^2) + abs(lambda_1) * abs(p_norm(diff(x = beta, differences = 1), 1))
+  prob <- Problem(Minimize(obj))
+  result <- solve(prob)
+  
+  betas = result$getValue(beta)
+  predict_fused_hour = X_test %*% betas
+  MAPE_fused_hour = calculate_mape(predict_fused_hour, y_test)
+  model_fused_hourly = rbind(model_fused_hourly, data.table(Hour = i, MAPE = MAPE_fused_hour))
+}
+
+model_fused_hourly
+```
+
+When we calculate MAPE values, we get the similar results with Lasso Regression. This approach could have better result, but we couldn't apply a grid search for lambda values. A further work could be to find a solution to come up with best lambda values. After this process we will not include the results of fused regression because of the same results.
+
+### 2.8 Task 6
+
+Now, at the end of the task, we can plot all MAPE values in a boxplot.
+
+```{r box plot}
+All_MAPE = data.table(MAPE = c(MAPE_lag168, MAPE_lag48, MAPE_lr, model_lr_hourly$MAPE, model_lasso_min_hourly$MAPE, model_lasso_1se_hourly$MAPE), Model = c('Lag_168', 'Lag_48', 'LR', rep('Hourly_LR', 24), rep('Hourly_Lasso_Min', 24), rep('Hourly_Lasso_1se', 24 )))
+ggplot(data = All_MAPE, aes(x=Model, y=MAPE)) + geom_boxplot()
+```
+
+When we look at the results of all MAPE values, we see that hourly lasso models are far better than the others. As we explained before, it is the expected result thanks to using more features and regularization that tries to overcome the overfitting problem. At the end of the task, we can come up with some information like below:
+
+- In our data, weekly seasonality is more important than daily and hourly seasonality.
+- To use all hourly consumption of a day is a better approach to create a model. In this type of situations, we need to consider the penalized regression to reduce the chance of overfitting.
+- To use two-day and one-week before consumption information is a reliable process with respect to their MAPE values.
+
+## REFERENCES
+- [EPIAS](https://seffaflik.epias.com.tr/)
+- [MAPE](https://www.statology.org/mape-r/)
+- [Regex Operation](https://stackoverflow.com/questions/36719061/removing-decimals-in-r)
+- [Analytics Edge](https://www.edx.org/course/the-analytics-edge)
+- [CVXR](http://stanford.edu/~anqif/papers/cvxr.pdf)
+- [Multiple boxplot in one graph](https://stackoverflow.com/questions/14604439/plot-multiple-boxplot-in-one-graph)
