@@ -1,0 +1,700 @@
+---
+title: "Homework 4"
+author: "Taha BAYAZ"
+date: "29 01 2021"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+    theme: united
+    highlight: tango
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center", message = FALSE, warning = FALSE, error = FALSE)
+```
+
+<style>
+#TOC {
+ color: 
+ font-family: Calibri;
+ background-color:
+ border-color: darkred;
+}
+#header {
+ color: darkred;
+ font-family: Calibri;
+ background-color:
+}
+body {
+ font-family: Calibri;
+ }
+ 
+</style>
+
+# COMPARING THE PERFORMANCE OF MODELS
+
+## 1. INTRODUCTION
+
+### 1.1 Data
+
+#### Ames Housing
+
+Here's a brief version of what you'll find in the data description file.
+
+`SalePrice`: the property's sale price in dollars. This is the target variable that you're trying to predict.
+`MSSubClass`: The building class
+`MSZoning`: The general zoning classification
+`LotFrontage`: Linear feet of street connected to property
+`LotArea`: Lot size in square feet
+`Street`: Type of road access
+`Alley`: Type of alley access
+`LotShape`: General shape of property
+`LandContour`: Flatness of the property
+`Utilities`: Type of utilities available
+`LotConfig`: Lot configuration
+`LandSlope`: Slope of property
+`Neighborhood`: Physical locations within Ames city limits
+`Condition1`: Proximity to main road or railroad
+`Condition2`: Proximity to main road or railroad (if a second is present)
+`BldgType`: Type of dwelling
+`HouseStyle`: Style of dwelling
+`OverallQual`: Overall material and finish quality
+`OverallCond`: Overall condition rating
+`YearBuilt`: Original construction date
+`YearRemodAdd`: Remodel date
+`RoofStyle`: Type of roof
+`RoofMatl`: Roof material
+`Exterior1st`: Exterior covering on house
+`Exterior2nd`: Exterior covering on house (if more than one material)
+`MasVnrType`: Masonry veneer type
+`MasVnrArea`: Masonry veneer area in square feet
+`ExterQual`: Exterior material quality
+`ExterCond`: Present condition of the material on the exterior
+`Foundation`: Type of foundation
+`BsmtQual`: Height of the basement
+`BsmtCond`: General condition of the basement
+`BsmtExposure`: Walkout or garden level basement walls
+`BsmtFinType1`: Quality of basement finished area
+`BsmtFinSF1`: Type 1 finished square feet
+`BsmtFinType2`: Quality of second finished area (if present)
+`BsmtFinSF2`: Type 2 finished square feet
+`BsmtUnfSF`: Unfinished square feet of basement area
+`TotalBsmtSF`: Total square feet of basement area
+`Heating`: Type of heating
+`HeatingQC`: Heating quality and condition
+`CentralAir`: Central air conditioning
+`Electrical`: Electrical system
+`1stFlrSF`: First Floor square feet
+`2ndFlrSF`: Second floor square feet
+`LowQualFinSF`: Low quality finished square feet (all floors)
+`GrLivArea`: Above grade (ground) living area square feet
+`BsmtFullBath`: Basement full bathrooms
+`BsmtHalfBath`: Basement half bathrooms
+`FullBath`: Full bathrooms above grade
+`HalfBath`: Half baths above grade
+`Bedroom`: Number of bedrooms above basement level
+`Kitchen`: Number of kitchens
+`KitchenQual`: Kitchen quality
+`TotRmsAbvGrd`: Total rooms above grade (does not include bathrooms)
+`Functional`: Home functionality rating
+`Fireplaces`: Number of fireplaces
+`FireplaceQu`: Fireplace quality
+`GarageType`: Garage location
+`GarageYrBlt`: Year garage was built
+`GarageFinish`: Interior finish of the garage
+`GarageCars`: Size of garage in car capacity
+`GarageArea`: Size of garage in square feet
+`GarageQual`: Garage quality
+`GarageCond`: Garage condition
+`PavedDrive`: Paved driveway
+`WoodDeckSF`: Wood deck area in square feet
+`OpenPorchSF`: Open porch area in square feet
+`EnclosedPorch`: Enclosed porch area in square feet
+`3SsnPorch`: Three season porch area in square feet
+`ScreenPorch`: Screen porch area in square feet
+`PoolArea`: Pool area in square feet
+`PoolQC`: Pool quality
+`Fence`: Fence quality
+`MiscFeature`: Miscellaneous feature not covered in other categories
+`MiscVal`: $Value of miscellaneous feature
+`MoSold`: Month Sold
+`YrSold`: Year Sold
+`SaleType`: Type of sale
+`SaleCondition`: Condition of sale
+
+The data can be downloaded with this command: `AmesHousing::make_ames()`
+from this [link](http://www.kaggle.com/c/5407/download-all)
+
+#### Financial Distress
+Context
+This data set deals with the financial distress prediction for a sample of companies.
+
+Content
+First column: Company represents sample companies.
+
+Second column: Time shows different time periods that data belongs to. Time series length varies between 1 to 14 for each company.
+
+Third column: The target variable is denoted by "Financial Distress" if it is greater than -0.50 the company should be considered as healthy (0). Otherwise, it would be regarded as financially distressed (1).
+
+Fourth column to the last column: The features denoted by x1 to x83, are some financial and non-financial characteristics of the sampled companies. These features belong to the previous time period, which should be used to predict whether the company will be financially distressed or not (classification). Feature x80 is a categorical variable.
+
+The data can be downloaded from this [link](https://www.kaggle.com/shebrahimi/financial-distress/download)
+
+#### Drug Consumption
+
+Database contains records for 1885 respondents. For each respondent 12 attributes are known: Personality measurements which include NEO-FFI-R (neuroticism, extraversion, openness to experience, agreeableness, and conscientiousness), BIS-11 (impulsivity), and ImpSS (sensation seeking), level of education, age, gender, country of residence and ethnicity. All input attributes are originally categorical and are quantified. After quantification values of all input features can be considered as real-valued. In addition, participants were questioned concerning their use of 18 legal and illegal drugs (alcohol, amphetamines, amyl nitrite, benzodiazepine, cannabis, chocolate, cocaine, caffeine, crack, ecstasy, heroin, ketamine, legal highs, LSD, methadone, mushrooms, nicotine and volatile substance abuse and one fictitious drug (Semeron) which was introduced to identify over-claimers. For each drug they have to select one of the answers: never used the drug, used it over a decade ago, or in the last decade, year, month, week, or day.
+Database contains 18 classification problems. Each of independent label variables contains seven classes: "Never Used", "Used over a Decade Ago", "Used in Last Decade", "Used in Last Year", "Used in Last Month", "Used in Last Week", and "Used in Last Day". We will use the last column as target variable.
+
+The data can be downloaded from this [link](https://archive.ics.uci.edu/ml/machine-learning-databases/00373/drug_consumption.data)
+
+#### Telco Customer Churn
+
+Context
+"Predict behavior to retain customers. You can analyze all relevant customer data and develop focused customer retention programs." [IBM Sample Data Sets]
+
+Content
+Each row represents a customer, each column contains customer’s attributes described on the column Metadata.
+
+The data set includes information about:
+
+Customers who left within the last month – the column is called Churn
+Services that each customer has signed up for – phone, multiple lines, internet, online security, online backup, device protection, tech support, and streaming TV and movies
+Customer account information – how long they’ve been a customer, contract, payment method, paperless billing, monthly charges, and total charges
+Demographic info about customers – gender, age range, and if they have partners and dependents
+
+The data can be downloaded from this [link](https://www.kaggle.com/blastchar/telco-customer-churn/download)
+
+### 1.2 Objective
+
+In this assignment, compare the performance of 4 algorithms, which are Lasso Regression, Decision Tree, Random Forest and Stochastic Gradient Boosting. We will create 4 models for each one of these datasets and compare their performances.
+
+## 2. TASKS
+
+### 2.1 Packages and Funcitons
+
+Throughout the assignment, we will use _data.table_, _tidyverse_, _AmesHousing_, _glmnet_, _caret_, _rpart_, _randomforest_, _gbm_ and _plyr_ packages.
+
+```{r packages, message=FALSE, warning=FALSE}
+#Required packages
+pti <- c("data.table", "tidyverse", "AmesHousing", "glmnet", "caret", "rpart", "randomForest", "gbm", "plyr")
+pti <- pti[!(pti %in% installed.packages())]
+if(length(pti)>0){
+    install.packages(pti)
+}
+
+library(data.table)
+library(tidyverse)
+library(AmesHousing)
+library(glmnet)
+library(caret)
+library(rpart)
+library(randomForest)
+library(gbm)
+library(plyr)
+
+setwd("C:/Users/Th/Desktop/YL/582/fall20-TahaBayaz/Homework/HW4")
+```
+
+When we want to calculate a metric to compare any two models, we will use _calculate_r2_ for numerical target and _calculate_cm_ for categorical target. When we are trying to find the best lambda parameter for Lasso Regression, we will use _lasso_lambdas_ function. When we want to create a Lasso model, we will use _lasso_model_ function. When we want to tune hyper parameters for other algorithms, we will use _model_tuning_ function.
+
+```{r functions}
+calculate_r2 = function(pred, true){
+  cor(pred, true) ^ 2
+}
+
+calculate_cm = function(pred, true){
+  sum(diag(table(true, pred))) / length(true)
+}
+
+lasso_calculate_accuracy = function(model, data, target, type){
+  cols = setdiff(names(data), target)
+  X = data.matrix(data[,..cols, with = FALSE])
+  y = data.matrix(data[,..target, with = FALSE])
+  pred = predict(model, X, type = type)
+  if (type == "class"){
+    score = calculate_cm(pred, y)
+  }else{
+    score = calculate_r2(pred, y)
+  }
+  score
+}
+
+calculate_accuracy = function(model, data, target, type){
+  cols = setdiff(names(data), target)
+  X = data[,..cols, with = FALSE]
+  y = data.matrix(data[,..target, with = FALSE])
+  pred = predict(model, newdata = X)
+  if (type == "class"){
+    score = calculate_cm(pred, y)
+  }else{
+    score = calculate_r2(pred, y)
+  }
+  score
+}
+
+lasso_lambdas = function(data, target, family){
+  cols = setdiff(names(data), target)
+  X = data.matrix(data[, ..cols, with = FALSE])
+  y = data.matrix(data[,..target, with = FALSE])
+
+  lasso_cv = cv.glmnet(X, y, family = family, standardize = TRUE)
+  lambda_min = lasso_cv$lambda.min
+  lambda_1se = lasso_cv$lambda.1se
+  c(lambda_min, lambda_1se)
+}
+
+lasso_model = function(data, target, lambda, family){
+  cols = setdiff(names(data), target)
+  X = data.matrix(data[, ..cols, with = FALSE])
+  y = data.matrix(data[, ..target, with = FALSE])
+  
+  model = glmnet(X,
+                 y,
+                 lambda = lambda,
+                 family = family,
+                 standardize = TRUE,
+                 alpha = 1)
+  model
+}
+
+dt_tuning = function(data, target, min_bucket){
+  set.seed(12345) 
+  TRcontrol = trainControl(method ="cv", number = 10)
+  
+  model = train(as.formula(paste(target, "~ .")),
+                data = data,
+                method = "rpart",
+                trControl = TRcontrol, 
+                tuneGrid = expand.grid(cp = seq(0.001, 0.1, length.out = 6)),
+                control = rpart.control(min_bucket = min_bucket)
+                ) 
+  model
+}
+
+rf_tuning = function(data, target){
+  set.seed(12345) 
+  control = trainControl(method ="cv", number = 10)
+  
+  model = train(as.formula(paste(target, "~ .")),
+                data = data,
+                trControl = control, 
+                tuneGrid =  expand.grid(mtry = seq(floor(ncol(data) / 4), floor(ncol(data) / 2), length.out = 5)),
+                ntree = 500,
+                nodesize = 5 
+                ) 
+  model
+}
+
+gbm_tuning = function(data, target, distribution, grid){
+  for(i in 1:nrow(grid)) {
+    set.seed(12345)
+    
+    gbm_model <- gbm(as.formula(paste(target, "~ .")),
+                     data = data,
+                     distribution = distribution,
+                     interaction.depth = grid$interaction.depth[i],
+                     n.trees = grid$n.trees[i],
+                     shrinkage = grid$shrinkage[i],
+                     n.minobsinnode = grid$n.minobsinnode[i],
+                     train.fraction = .75,
+                     n.cores = NULL,
+                     verbose = FALSE
+    )
+    grid$min_RMSE[i] <- sqrt(min(gbm_model$valid.error))
+  }
+  best_param = grid[which.min(grid$min_RMSE),]
+  
+  model <- gbm(as.formula(paste(target, "~ .")),
+                   data = data,
+                   distribution = distribution,
+                   interaction.depth = best_param$interaction.depth,
+                   n.trees = best_param$n.trees,
+                   shrinkage = best_param$shrinkage,
+                   n.minobsinnode = best_param$n.minobsinnode,
+                   train.fraction = .75,
+                   n.cores = NULL,
+                   verbose = FALSE
+  ) 
+  model
+}
+```
+
+### 2.2 Data Manupilation 
+
+At the beginning, we need to import all data.
+
+```{r}
+hp_data = as.data.table(make_ames())
+fd_data = fread("Financial Distress.csv")
+dc_data = fread("drug_consumption.data")
+churn_data = fread("WA_Fn-UseC_-Telco-Customer-Churn.csv", nrows = 3000)
+churn_data = churn_data[,-1]
+
+colnames(hp_data) <- make.names(colnames(hp_data))
+colnames(fd_data) <- make.names(colnames(fd_data))
+colnames(dc_data) <- make.names(colnames(dc_data))
+colnames(churn_data) <- make.names(colnames(churn_data))
+```
+
+We can look for the head of all data.
+
+```{r}
+head(hp_data)
+head(fd_data)
+head(dc_data)
+head(churn_data)
+```
+
+We can look at `str` of all datasets.
+
+```{r}
+str(hp_data)
+str(fd_data)
+str(dc_data)
+str(churn_data)
+```
+
+```{r}
+table(dc_data$V32)
+table(churn_data$Churn)
+```
+
+When we look at all data, we see that all data have at least 20 columns and more than 1000 instances. We have at least one data that has a numeric response variable, which is `Ames Housing`. We have at least two data that has more than 50 columns, which are `Ames Housing` and `Financial Distress`. We have at least one multiclass response variable, which is `Drug Consumption`. We have at least one data that has imbalance response variable, which is `Customer Churn`. We have at least one data that has numeric and categorical variables, which is `Ames Housing`. It means that we have enough different data that help us to compare algorithms' performance in different situations.
+
+We need to divide data into train and test set. 70% of data is enough to create a model and the rest will be treated as test data. We will use the *createDataPartition* function from *caret* package. To get the same result in all runs, we set random seed before splitting.
+
+```{r}
+set.seed(12345)
+split_hp <- createDataPartition(hp_data$Sale_Price, p = .7, 
+                                list = FALSE, 
+                                times = 1)
+
+hp_train <- hp_data[split_hp,]
+hp_test  <- hp_data[-split_hp,]
+
+set.seed(12345)
+split_fd <- createDataPartition(fd_data$Financial.Distress, p = .7, 
+                                list = FALSE, 
+                                times = 1)
+
+fd_train <- fd_data[split_fd,]
+fd_test  <- fd_data[-split_fd,]
+
+set.seed(12345)
+split_dc <- createDataPartition(dc_data$V32, p = .7, 
+                                list = FALSE, 
+                                times = 1)
+
+dc_train <- dc_data[split_dc,]
+dc_test  <- dc_data[-split_dc,]
+
+set.seed(12345)
+split_churn <- createDataPartition(churn_data$Churn, p = .7, 
+                                   list = FALSE, 
+                                   times = 1)
+
+churn_train <- churn_data[split_churn,]
+churn_test  <- churn_data[-split_churn,]
+```
+
+Before moving to apply algorithms to data, we need to validate the data. First process is to check whether there are duplicate rows in the data.
+
+```{r}
+sum(duplicated(hp_train))
+sum(duplicated(hp_test))
+sum(duplicated(fd_train))
+sum(duplicated(fd_test))
+sum(duplicated(dc_train))
+sum(duplicated(dc_test))
+sum(duplicated(churn_train))
+sum(duplicated(churn_test))
+```
+
+As we can see, there is no duplicated rows in the data. Now, we need to check whether there are NULL values in the data.
+
+```{r}
+colSums(apply(hp_train, 2, is.na))
+colSums(apply(hp_test, 2, is.na))
+colSums(apply(fd_train, 2, is.na))
+colSums(apply(fd_test, 2, is.na))
+colSums(apply(dc_train, 2, is.na))
+colSums(apply(dc_test, 2, is.na))
+colSums(apply(churn_train, 2, is.na))
+colSums(apply(churn_test, 2, is.na))
+```
+
+As we can see from above, we have missing values only in `Customer Churn` data. We have only 10 rows that have NULL values in the train and 1 row that has NULL value in the test set. So, we can just remove these rows from the data.
+
+```{r NA}
+churn_train = churn_train[complete.cases(churn_train),]
+churn_test = churn_test[complete.cases(churn_test),]
+```
+
+After applying this process, we should have no NULL values in these datasets.
+
+```{r}
+sum(apply(churn_train, 2, is.na))
+sum(apply(churn_test, 2, is.na))
+```
+
+Lastly, we need to convert character type columns to factor. Also transform `Churn` column to 1 if it is `Yes`, otherwise 0.
+
+```{r}
+hp_train = hp_train %>%
+  mutate_if(is.character, as.factor)
+hp_test = hp_test %>%
+  mutate_if(is.character, as.factor)
+fd_train = fd_train %>%
+  mutate_if(is.character, as.factor)
+fd_test = fd_test %>%
+  mutate_if(is.character, as.factor)
+dc_train = dc_train %>%
+  mutate_if(is.character, as.factor)
+dc_test = dc_test %>%
+  mutate_if(is.character, as.factor)
+churn_train = churn_train %>%
+  mutate_if(is.character, as.factor)
+churn_test = churn_test %>%
+  mutate_if(is.character, as.factor)
+```
+
+Now, we are ready to apply algorithms to these datasets. As algorithms, we will use Lasso Regression, Decision Tree, Random Forest and Stochastic Gradient Boosting. After creating all these models, we can compare the results.
+
+In Lasso Regression, the important parameter is the lambda value. To find the best lambda value, we will use _lasso_lambdas_ function.
+
+```{r lasso lambda}
+lambda_hp = lasso_lambdas(hp_train, "Sale_Price", "gaussian")
+lambda_fd = lasso_lambdas(fd_train, "Financial.Distress", "gaussian")
+lambda_dc = lasso_lambdas(dc_train, "V32", "multinomial")
+lambda_churn = lasso_lambdas(churn_train, "Churn", "binomial")
+
+lambda_min_hp = lambda_hp[1]
+lambda_1se_hp = lambda_hp[2]
+lambda_min_fd = lambda_fd[1]
+lambda_1se_fd = lambda_fd[2]
+lambda_min_dc = lambda_dc[1]
+lambda_1se_dc = lambda_dc[2]
+lambda_min_churn = lambda_churn[1]
+lambda_1se_churn = lambda_churn[2]
+```
+
+We find the best alpha value for Lasso Regression, and largest value of lambda such that error is within 1 standard error of the minimum. Now, we are ready to build a Lasso Regression for all datasets using _lasso_model_ function.
+
+```{r lasso model}
+lasso_min_hp = lasso_model(hp_train, "Sale_Price", lambda_min_hp, "gaussian")
+lasso_1se_hp = lasso_model(hp_train, "Sale_Price", lambda_1se_hp, "gaussian")
+lasso_min_fd = lasso_model(fd_train, "Financial.Distress", lambda_min_fd, "gaussian")
+lasso_1se_fd = lasso_model(fd_train, "Financial.Distress", lambda_1se_fd, "gaussian")
+lasso_min_dc = lasso_model(dc_train, "V32", lambda_min_dc, "multinomial")
+lasso_1se_dc = lasso_model(dc_train, "V32", lambda_1se_dc, "multinomial")
+lasso_min_churn = lasso_model(churn_train, "Churn", lambda_min_churn, "binomial")
+lasso_1se_churn = lasso_model(churn_train, "Churn", lambda_1se_churn, "binomial")
+```
+
+Now, we have create 2 Lasso Regression models for each datasets, which first one is created with lambda_min and the other one is created with lambda_1se.
+
+We can create Decision Tree models. The most important parameters in a tree model are **the minimal number of observations per tree leaf** and **complexity parameter**. We need to find best parameters for all models individually.
+
+```{r}
+r2_hp = 0
+r2_fd = 0
+cm_dc = 0
+cm_churn = 0
+for (minbucket in seq(2, 7, length.out = 6)){
+  dt_cv_hp = dt_tuning(hp_train, "Sale_Price", minbucket)
+  predict_hp = predict(dt_cv_hp$finalModel)
+  score_hp = calculate_r2(predict_hp, hp_train$Sale_Price)
+  if (score_hp > r2_hp) {
+    r2_hp = score_hp
+    dt_hp = dt_cv_hp$finalModel
+  }
+  
+  dt_cv_fd = dt_tuning(fd_train, "Financial.Distress", minbucket)
+  predict_fd = predict(dt_cv_fd$finalModel)
+  score_fd = calculate_r2(predict_fd, fd_train$Financial.Distress)
+  if (score_fd > r2_fd) {
+    r2_fd = score_fd
+    dt_fd = dt_cv_fd$finalModel
+  }
+
+  dt_cv_dc = dt_tuning(dc_train, "V32", minbucket)
+  predict_dc = predict(dt_cv_dc$finalModel)
+  predict_dc = apply(data.table(Class = apply(predict_dc, 1, which.max)), 1, function(x){unique(dc_train$V32)[order(unique(dc_train$V32))][x]})
+  score_dc = calculate_cm(predict_dc, dc_train$V32)
+  if (score_dc > cm_dc) {
+    r2_dc = score_dc
+    dt_dc = dt_cv_dc$finalModel
+  }
+  
+  dt_cv_churn = dt_tuning(churn_train, "Churn", minbucket)
+  predict_churn = predict(dt_cv_churn$finalModel)
+  predict_churn = apply(data.table(Class = apply(predict_churn, 1, which.max)), 1, function(x){unique(churn_train$Churn)[order(unique(churn_train$Churn))][x]})
+  score_churn = calculate_cm(predict_churn, churn_train$Churn)
+  if (score_churn > cm_churn) {
+    r2_churn = score_churn
+    dt_churn = dt_cv_churn$finalModel
+  }
+}
+
+cp_hp = dt_hp$param$control$cp
+cp_fd = dt_fd$param$control$cp
+cp_dc = dt_dc$param$control$cp
+cp_churn = dt_churn$param$control$cp
+
+minbucket_hp = dt_hp$param$control$minbucket
+minbucket_fd = dt_fd$param$control$minbucket
+minbucket_dc = dt_dc$param$control$minbucket
+minbucket_churn = dt_churn$param$control$minbucket
+```
+
+Now, we have built all decision tree models. We are ready to move on to Random Forest approach.
+We can create Random Forest models. The most important parameter in a random forest model is **number of variables randomly sampled as candidates at each split**. We will try to find best value for that parameter. There are two import parameters, which are **number of trees to grow** and **minimum size of terminal nodes**. We will set 500 and 5, respectively.
+
+```{r}
+rf_hp = rf_tuning(hp_train, "Sale_Price")
+rf_fd = rf_tuning(fd_train, "Financial.Distress")
+rf_dc = rf_tuning(dc_train, "V32")
+rf_churn = rf_tuning(churn_train, "Churn")
+
+mtry_hp = rf_hp$bestTune$mtry
+mtry_fd = rf_fd$bestTune$mtry
+mtry_dc = rf_dc$bestTune$mtry
+mtry_churn = rf_churn$bestTune$mtry
+```
+
+Now, we have built all random forest models. We are ready to move on to Stochastic Gradient Boosting approach.
+We can create Stochastic Gradient Boosting models. The most important parameters in a Stochastic Gradient Boosting model are **depth of the tree**, **learning rate** and **number of trees**. We will try to find best value for that parameter. There is also one more import parameter, which is **the minimal number of observations per tree leaf**. We will set 10 for this value.
+
+```{r}
+churn_train_sgb = churn_train %>%
+  mutate(Churn = if_else(Churn == "Yes", 1, 0))
+churn_test_sgb = churn_test %>%
+  mutate(Churn = if_else(Churn == "Yes", 1, 0))
+
+grid_sgb <- expand.grid(shrinkage = c(.01, .05, .1), interaction.depth = c(3, 5, 7), n.trees = c(80, 100, 120), n.minobsinnode = 10, min_RMSE = 0)
+sgb_hp = gbm_tuning(hp_train, "Sale_Price", "gaussian", grid_sgb)
+sgb_fd = gbm_tuning(fd_train, "Financial.Distress", "gaussian", grid_sgb)
+sgb_dc = gbm_tuning(dc_train, "V32", "multinomial", grid_sgb)
+sgb_churn = gbm_tuning(churn_train_sgb, "Churn", "bernoulli", grid_sgb)
+
+interaction.depth_hp = sgb_hp$interaction.depth
+shrinkage_hp = sgb_hp$shrinkage
+n.trees_hp = sgb_hp$n.trees
+n.minobsinnode_hp = sgb_hp$n.minobsinnode
+
+interaction.depth_fd = sgb_fd$interaction.depth
+shrinkage_fd = sgb_fd$shrinkage
+n.trees_fd = sgb_fd$n.trees
+n.minobsinnode_fd = sgb_fd$n.minobsinnode
+
+interaction.depth_dc = sgb_dc$interaction.depth
+shrinkage_dc = sgb_dc$shrinkage
+n.trees_dc = sgb_dc$n.trees
+n.minobsinnode_dc = sgb_dc$n.minobsinnode
+
+interaction.depth_churn = sgb_churn$interaction.depth
+shrinkage_churn = sgb_churn$shrinkage
+n.trees_churn = sgb_churn$n.trees
+n.minobsinnode_churn = sgb_churn$n.minobsinnode
+```
+
+We have built all models. We can show their best parameters as below.
+
+```{r}
+params = data.table(Parameters = c("lambda_min", "lambda_1se", "cp", "minbucket", "mtry", "interaction.depth", "shrinkage", "n.trees", "n.minobsinnode"),
+           HP = c(lambda_min_hp, lambda_1se_hp, cp_hp, minbucket_hp, mtry_hp, interaction.depth_hp, shrinkage_hp, n.trees_hp, n.minobsinnode_hp),
+           FD = c(lambda_min_fd, lambda_1se_fd, cp_fd, minbucket_fd, mtry_fd, interaction.depth_fd, shrinkage_fd, n.trees_fd, n.minobsinnode_fd),
+           DC = c(lambda_min_dc, lambda_1se_dc, cp_dc, minbucket_dc, mtry_dc, interaction.depth_dc, shrinkage_dc, n.trees_dc, n.minobsinnode_dc),
+           CHURN = c(lambda_min_churn, lambda_1se_churn, cp_churn, minbucket_churn, mtry_churn, interaction.depth_churn, shrinkage_churn, n.trees_churn, n.minobsinnode_churn))
+
+params
+```
+
+To be able to compare models, we need to calculate error of all models. For regression models, we will calculate R-squared and for classification models, we will calculate the confusion matrix and accuracy from confusion matrix.
+
+```{r}
+lasso_min_hp_accuracy_train = lasso_calculate_accuracy(lasso_min_hp, hp_train, "Sale_Price", "response")
+lasso_min_hp_accuracy_test = lasso_calculate_accuracy(lasso_min_hp, hp_test, "Sale_Price", "response")
+lasso_min_fd_accuracy_train = lasso_calculate_accuracy(lasso_min_fd, fd_train, "Financial.Distress", "response")
+lasso_min_fd_accuracy_test = lasso_calculate_accuracy(lasso_min_fd, fd_test, "Financial.Distress", "response")
+lasso_min_dc_accuracy_train = lasso_calculate_accuracy(lasso_min_dc, dc_train, "V32", "class")
+lasso_min_dc_accuracy_test = lasso_calculate_accuracy(lasso_min_dc, dc_test, "V32", "class")
+lasso_min_churn_accuracy_train = lasso_calculate_accuracy(lasso_min_churn, churn_train, "Churn", "class")
+lasso_min_churn_accuracy_test = lasso_calculate_accuracy(lasso_min_churn, churn_test, "Churn", "class")
+lasso_1se_hp_accuracy_train = lasso_calculate_accuracy(lasso_1se_hp, hp_train,  "Sale_Price","response")
+lasso_1se_hp_accuracy_test = lasso_calculate_accuracy(lasso_1se_hp, hp_test, "Sale_Price", "response")
+lasso_1se_fd_accuracy_train = lasso_calculate_accuracy(lasso_1se_fd, fd_train,  "Financial.Distress","response")
+lasso_1se_fd_accuracy_test = lasso_calculate_accuracy(lasso_1se_fd, fd_test, "Financial.Distress", "response")
+lasso_1se_dc_accuracy_train = lasso_calculate_accuracy(lasso_1se_dc, dc_train, "V32", "class")
+lasso_1se_dc_accuracy_test = lasso_calculate_accuracy(lasso_1se_dc, dc_test, "V32", "class")
+lasso_1se_churn_accuracy_train = lasso_calculate_accuracy(lasso_1se_churn, churn_train, "Churn", "class")
+lasso_1se_churn_accuracy_test = lasso_calculate_accuracy(lasso_1se_churn, churn_test, "Churn", "class")
+
+#dt_hp_accuracy_train = calculate_accuracy(dt_hp, hp_train, "Sale_Price", "vector")
+#dt_hp_accuracy_test = calculate_accuracy(dt_hp, hp_test, "Sale_Price", "vector")
+#dt_fd_accuracy_train = calculate_accuracy(dt_fd, fd_train, "Financial.Distress", "vector")
+#dt_fd_accuracy_test = calculate_accuracy(dt_fd, fd_test, "Financial.Distress", "vector")
+#dt_dc_accuracy_train = calculate_accuracy(dt_dc, dc_train, "V32", "class")
+#dt_dc_accuracy_test = calculate_accuracy(dt_dc, dc_test, "V32", "class")
+#dt_churn_accuracy_train = calculate_accuracy(dt_churn, churn_train, "Churn", "class")
+#dt_churn_accuracy_test = calculate_accuracy(dt_churn, churn_test, "Churn", "class")
+
+rf_hp_accuracy_train = calculate_accuracy(rf_hp, hp_train, "Sale_Price", "response")
+rf_hp_accuracy_test = calculate_accuracy(rf_hp, hp_test, "Sale_Price", "response")
+rf_fd_accuracy_train = calculate_accuracy(rf_fd, fd_train, "Financial.Distress", "response")
+rf_fd_accuracy_test = calculate_accuracy(rf_fd, fd_test, "Financial.Distress", "response")
+rf_dc_accuracy_train = calculate_accuracy(rf_dc, dc_train, "V32", "class")
+#rf_dc_accuracy_test = calculate_accuracy(rf_dc, dc_test, "V32", "class")
+rf_churn_accuracy_train = calculate_accuracy(rf_churn, churn_train, "Churn", "class")
+rf_churn_accuracy_test = calculate_accuracy(rf_churn, churn_test, "Churn", "class")
+
+sgb_hp_accuracy_train = calculate_accuracy(sgb_hp, hp_train, "Sale_Price", "response")
+sgb_hp_accuracy_test = calculate_accuracy(sgb_hp, hp_test, "Sale_Price", "response")
+sgb_fd_accuracy_train = calculate_accuracy(sgb_fd, fd_train, "Financial.Distress", "response")
+sgb_fd_accuracy_test = calculate_accuracy(sgb_fd, fd_test, "Financial.Distress", "response")
+#sgb_dc_accuracy_train = calculate_accuracy(sgb_dc, dc_train, "V32", "class")
+#sgb_dc_accuracy_test = calculate_accuracy(sgb_dc, dc_test, "V32", "class")
+sgb_churn_accuracy_train = calculate_accuracy(sgb_churn, churn_train_sgb, "Churn", "class")
+sgb_churn_accuracy_test = calculate_accuracy(sgb_churn, churn_test_sgb, "Churn", "class")
+```
+
+We find all train and test errors for all models. We need to compare the errors. One type of a comparison will be applied to all models that are created from the same dataset and the other one will be applied to all datasets that created the same model. We calculated R-square as an accuracy metric for regression models and calculated confusion matrix for classification models. So, we can not directly compare their accuracy metrics because of inconsistency.
+
+I couldn't find some accuracy metrics because of some errors that I couldn't solve.
+
+```{r}
+hp_test_accuracies = c(lasso_min_hp_accuracy_test, lasso_1se_hp_accuracy_test, rf_hp_accuracy_test, sgb_hp_accuracy_test)
+
+which.max(hp_test_accuracies)
+hp_test_accuracies[which.max(hp_test_accuracies)]
+```
+
+We see that for a regression data, which is house pricing data, SGB approach works better than the others.
+
+```{r}
+fd_test_accuracies = c(lasso_min_fd_accuracy_test, lasso_1se_fd_accuracy_test, rf_fd_accuracy_test, sgb_fd_accuracy_test)
+
+which.max(fd_test_accuracies)
+fd_test_accuracies[which.max(fd_test_accuracies)]
+```
+
+We see that for another regression data, which is financial distress data, RF approach works better than the others.
+
+```{r}
+churn_test_accuracies = c(lasso_min_churn_accuracy_test, lasso_1se_churn_accuracy_test, rf_churn_accuracy_test, sgb_churn_accuracy_test)
+
+which.max(churn_test_accuracies)
+churn_test_accuracies[which.max(churn_test_accuracies)]
+```
+
+We see that for a binary classification data, which is churn prediction data, RF approach works better than the others.

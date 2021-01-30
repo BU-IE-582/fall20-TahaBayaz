@@ -100,7 +100,7 @@ transform_wide = function(data){
 }
 ```
 
-### 2.2 Data Manupilation
+### 2.2 Data Manipulation
 
 Before starting tasks, we need to import the data. After importing, we change the column names.
 
