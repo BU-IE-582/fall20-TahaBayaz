@@ -1,0 +1,354 @@
+---
+title: "Final Exam"
+author: "Taha BAYAZ"
+date: "06 02 2021"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+    theme: united
+    highlight: tango
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center", message = FALSE, warning = FALSE, error = FALSE)
+```
+
+<style>
+#TOC {
+ color: 
+ font-family: Calibri;
+ background-color:
+ border-color: darkred;
+}
+#header {
+ color: darkred;
+ font-family: Calibri;
+ background-color:
+}
+body {
+ font-family: Calibri;
+ }
+ 
+</style>
+
+# MULTI INSTANCE LEARNING (MIL)
+
+## 1. INTRODUCTION
+
+### 1.1 Data
+
+We use *Musk* data in this fianl exam. The description can be found from this [link](https://archive.ics.uci.edu/ml/datasets/Musk+(Version+1)). We can download data from this [link](https://moodle.boun.edu.tr/pluginfile.php/722827/mod_folder/content/0/Musk1.csv?forcedownload=1).
+
+### 1.2 Objective
+
+We will try to create a model for this classification model. Normally, we have multiple instances for each bag and try to reduce to a one instance for all bags. So, we will have a regular learning problem at the end.
+In this final exam, I assumed that I will try to find a model for this dataset whereas it can not be used as a prediction model for future data. It means that, I will use the min and max of instances as feature but our future data can be one instance and the column information will be used as the average information.
+
+## 2. TASK
+
+As we explained in the Objective part, we will try to transform this data into regular learning problem data, which means that we will have one instance for each bags. We can find some information from exploratory data analysis (eda). In this final exam, we will use lasso regression and random forest algorithms and use AUC as accuracy metric.
+
+At the beginning, we need to import libraries and data.
+
+```{r packages, message=FALSE, warning=FALSE}
+#Required packages
+pti <- c("data.table", "tidyverse", "kmed", "Rfast", "glmnet", "caret", "ROSE")
+pti <- pti[!(pti %in% installed.packages())]
+if(length(pti)>0){
+    install.packages(pti)
+}
+
+library(data.table)
+library(tidyverse)
+library(kmed)
+library(Rfast)
+library(glmnet)
+library(caret)
+library(ROSE)
+```
+
+```{r}
+musk1 = fread("Musk1.csv")
+setnames(musk1,"V1","BagClass")
+setnames(musk1,"V2","BagId")
+head(musk1)
+```
+
+First column is our target variable. Second column is the bag id of all instances. Others are the characteristics (exact shape, or conformation etc.) of that instance.
+
+```{r}
+musk1 %>%
+  ggplot(aes(y = V3, fill = as.factor(BagId))) +
+  geom_boxplot()
+```
+
+As we can see from the boxplot, there are some variances among all bags for the first feature. 
+
+```{r}
+musk1 %>%
+  ggplot(aes(y = V4, fill = as.factor(BagId))) +
+  geom_boxplot()
+```
+
+The same result is applicable for the second. So, we can say that there are some variance in the data for all columns. If we want to get one instance for all bags, we can create a cluster object and calculate the mean of distances of all features for all bags. At the end of this process, we will include all distance information and we won't loose any information for all bags. As a result, we need to have a distance matrix and a clustering algorithm, which we will use kmeans. algorithm. But, we need to use k-medoids approach, which is used for distance matrix.
+
+For the distance matrix, we can use both `euclidean` and `manhattan` method to calculate the distances.
+
+```{r}
+dist_euc <- dist(musk1[,.SD, .SDcols = !c("BagClass", "BagId")],method = "euclidean")
+dist_man <- dist(musk1[,.SD, .SDcols = !c("BagClass", "BagId")],method = "manhattan")
+```
+
+At the beginning of cluster algorithm, we need to standardize/scale the data to get rid of the probability of being dominated by some features.
+
+```{r}
+dist_euc_scale = as.matrix(scale(dist_euc))
+dist_man_scale = as.matrix(scale(dist_man))
+```
+
+Now, we are ready to implement k-medoids approach. For k-medoids approach, number of cluster is an important parameter. To find the best k parameter, we will create models from the result of medoids and compare the AUC result of these methods. We will try k values from 2 to 10. 
+
+For creating a model, we will try Lasso Regression and Random Forest. So we can use a linear and nonlinear approach for these data.
+
+```{r}
+plot.new()
+
+k_legend <- data.table()
+k_color <- data.table()
+auc_euc_medoid <- data.table()
+lambda_euc_medoid <- data.table()
+
+for (k in seq(2, 10, 1)){
+  
+  med_euc <- fastkmed(dist_euc_scale, ncluster = k, iterate = 100)
+  
+  cluster_dist <- as.data.table(dist_euc_scale[,med_euc$medoid])
+  
+  temp <- cbind(musk1[,1:2],cluster_dist)
+  med_euc_bag <- temp[, lapply(.SD, mean), by=list(BagClass,BagId)] 
+  
+  lasso_cv = cv.glmnet(as.matrix(med_euc_bag[, 3:ncol(med_euc_bag)]), as.matrix(med_euc_bag$BagClass), alpha = 1, family = "binomial")
+  
+  lasso = glmnet(as.matrix(med_euc_bag[, 3:ncol(med_euc_bag)]),as.matrix(med_euc_bag$BagClass), alpha = 1, family = "binomial", lambda = lasso_cv$lambda.1se)
+  
+  pred = predict(lasso, as.matrix(med_euc_bag[, 3:ncol(med_euc_bag)]), type = "response")
+  k_legend <- rbind(k_legend,k)
+  k_color <- rbind(k_color,k)
+  
+  roc.curve(med_euc_bag$BagClass, pred, add.roc = ifelse(k == 2, FALSE, TRUE) , col = k, main = 'k-medoids with Euclidean Distance For Lasso Regression', cex.main = 0.7, cex.axis = 0.7)
+  legend("bottomright",  legend = unique(k_legend$x), col = unique(k_color$x), lty = 1  , title = "Cluster",  xjust =1 , yjust=1, x.intersp = 0.2,y.intersp = 0.7, cex = 0.7)
+  auc_euc_medoid <- rbind(auc_euc_medoid,data.table(k = k, auc = auc(med_euc_bag$BagClass, pred)))
+
+  lambda_euc_medoid <- rbind(lambda_euc_medoid,data.table(k = k, lambda = lasso_cv$lambda.1se))
+  
+}
+```
+
+So, it show that k = `r auc_euc_medoid$k[which.max(auc_euc_medoid$auc)]` gives the best AUC result for euclidean distance with lasso regression, which is `r max(auc_euc_medoid$auc)`. Best lambda value for this result is `r lambda_euc_medoid$lambda[lambda_euc_medoid$k == auc_euc_medoid$k[which.max(auc_euc_medoid$auc)]]`
+
+Now we can try this approach with Random Forest.
+
+```{r}
+plot.new()
+
+k_legend <- data.table()
+k_color <- data.table()
+auc_euc_medoid2 <- data.table()
+rf_param_euc_medoid <- data.table()
+
+for (k in seq(2, 10, 1)){
+  
+  med_euc <- fastkmed(dist_euc_scale, ncluster = k, iterate = 100) 
+  
+  cluster_dist <- as.data.table(dist_euc_scale[,med_euc$medoid])
+  
+  temp <- cbind(musk1[,1:2],cluster_dist)
+  med_euc_bag <- temp[, lapply(.SD, mean), by=list(BagClass,BagId)] 
+  set.seed(12345) 
+  control = trainControl(method ="cv", number = 10)
+  rf = train(x = med_euc_bag[,3:ncol(med_euc_bag)],
+                y = as.factor(med_euc_bag$BagClass),
+                trControl = control, 
+                tuneGrid =  expand.grid(mtry = seq(floor(ncol(med_euc_bag) / 4), floor(ncol(med_euc_bag) / 2), length.out = 5)),
+                ntree = 500,
+                nodesize = 5 
+  ) 
+  
+  pred = predict(rf$finalModel, med_euc_bag[, 3:ncol(med_euc_bag)], type = "response")
+  k_legend <- rbind(k_legend,k)
+  k_color <- rbind(k_color,k)
+  
+  roc.curve(med_euc_bag$BagClass, pred, add.roc = ifelse(k == 2, FALSE, TRUE) , col = k, main = 'k-medoids with Euclidean Distance For Random Forest', cex.main = 0.7, cex.axis = 0.7)
+  legend("bottomright",  legend = unique(k_legend$x), col = unique(k_color$x), lty = 1  , title = "Cluster",  xjust =1 , yjust=1, x.intersp = 0.2,y.intersp = 0.7, cex = 0.7)
+  auc_euc_medoid2 <- rbind(auc_euc_medoid2,data.table(k = k, auc = auc(med_euc_bag$BagClass, pred)))
+
+  rf_param_euc_medoid <- rbind(rf_param_euc_medoid,data.table(k = k, mtry = rf$finalModel$mtry))
+}
+```
+
+So, it show that k = `r auc_euc_medoid2$k[which.max(auc_euc_medoid2$auc)]` gives the best AUC result for euclidean distance with random forest, which is `r max(auc_euc_medoid2$auc)`. Best mtry value for this result is `r rf_param_euc_medoid$mtry[rf_param_euc_medoid$k == auc_euc_medoid2$k[which.max(auc_euc_medoid2$auc)]]`
+
+We can try to this approach for distance matrix that we calculated with manhattan method.
+
+```{r}
+plot.new()
+
+k_legend <- data.table()
+k_color <- data.table()
+auc_man_medoid <- data.table()
+lambda_man_medoid <- data.table()
+
+for (k in seq(2, 10, 1)){
+  
+  med_man <- fastkmed(dist_man_scale, ncluster = k, iterate = 100) 
+  
+  cluster_dist <- as.data.table(dist_man_scale[,med_man$medoid])
+  
+  temp <- cbind(musk1[,1:2],cluster_dist)
+  med_man_bag <- temp[, lapply(.SD, mean), by=list(BagClass,BagId)] 
+  
+  lasso_cv = cv.glmnet(as.matrix(med_man_bag[, 3:ncol(med_man_bag)]), as.matrix(med_man_bag$BagClass), alpha = 1, family = "binomial")
+  
+  lasso = glmnet(as.matrix(med_man_bag[, 3:ncol(med_man_bag)]),as.matrix(med_man_bag$BagClass), alpha = 1, family = "binomial", lambda = lasso_cv$lambda.1se)
+  
+  pred = predict(lasso, as.matrix(med_man_bag[, 3:ncol(med_man_bag)]), type = "response")
+  k_legend <- rbind(k_legend,k)
+  k_color <- rbind(k_color,k)
+  
+  roc.curve(med_man_bag$BagClass, pred, add.roc = ifelse(k == 2, FALSE, TRUE) , col = k, main = 'k-medoids with Manhattan Distance For Lasso Regression', cex.main = 0.7, cex.axis = 0.7)
+  legend("bottomright",  legend = unique(k_legend$x), col = unique(k_color$x), lty = 1  , title = "Cluster",  xjust =1 , yjust=1, x.intersp = 0.2,y.intersp = 0.7, cex = 0.7)
+  auc_man_medoid <- rbind(auc_man_medoid,data.table(k = k, auc = auc(med_man_bag$BagClass, pred)))
+
+  lambda_man_medoid <- rbind(lambda_man_medoid,data.table(k = k, lambda = lasso_cv$lambda.1se))
+}
+```
+
+So, it show that k = `r auc_man_medoid$k[which.max(auc_man_medoid$auc)]` gives the best AUC result for euclidean distance with lasso regression, which is `r max(auc_man_medoid$auc)`. Best lambda value for this result is `r lambda_man_medoid$lambda[lambda_man_medoid$k == auc_man_medoid$k[which.max(auc_man_medoid$auc)]]`
+
+We can do the similar approach for random forest.
+
+```{r}
+plot.new()
+
+k_legend <- data.table()
+k_color <- data.table()
+auc_man_medoid2 <- data.table()
+rf_param_man_medoid <- data.table()
+
+for (k in seq(2, 10, 1)){
+  
+  med_man <- fastkmed(dist_man_scale, ncluster = k, iterate = 100)
+  
+  cluster_dist <- as.data.table(dist_man_scale[,med_man$medoid])
+  
+  temp <- cbind(musk1[,1:2],cluster_dist)
+  med_man_bag <- temp[, lapply(.SD, mean), by=list(BagClass,BagId)] 
+  
+  set.seed(12345) 
+  control = trainControl(method ="cv", number = 10)
+  rf = train(x = med_euc_bag[,3:ncol(med_euc_bag)],
+                y = as.factor(med_euc_bag$BagClass),
+                trControl = control, 
+                tuneGrid =  expand.grid(mtry = seq(floor(ncol(med_euc_bag) / 4), floor(ncol(med_euc_bag) / 2), length.out = 5)),
+                ntree = 500,
+                nodesize = 5 
+  ) 
+  
+  pred = predict(rf$finalModel, med_euc_bag[, 3:ncol(med_euc_bag)], type = "response")
+  k_legend <- rbind(k_legend,k)
+  k_color <- rbind(k_color,k)
+  
+  roc.curve(med_man_bag$BagClass, pred, add.roc = ifelse(k == 2, FALSE, TRUE) , col = k, main = 'k-medoids with Manhattan Distance For Random Forest', cex.main = 0.7, cex.axis = 0.7)
+  legend("bottomright",  legend = unique(k_legend$x), col = unique(k_color$x), lty = 1  , title = "Cluster",  xjust =1 , yjust=1, x.intersp = 0.2,y.intersp = 0.7, cex = 0.7)
+  auc_man_medoid2 <- rbind(auc_man_medoid2,data.table(k = k, auc = auc(med_man_bag$BagClass, pred)))
+
+  rf_param_man_medoid <- rbind(rf_param_man_medoid,data.table(k = k, mtry = rf$finalModel$mtry))
+}
+```
+
+So, it show that k = `r auc_man_medoid2$k[which.max(auc_man_medoid2$auc)]` gives the best AUC result for manhattan distance with random forest, which is `r max(auc_man_medoid2$auc)`. Best mtry value for this result is `r rf_param_man_medoid$mtry[rf_param_man_medoid$k == auc_man_medoid2$k[which.max(auc_man_medoid2$auc)]]`
+
+Another approach would be to use min and max value of the corresponding bags and try to create models with this data. As explained in the Objective part, this method has a drawback. If there is a probability that new coming bags have more than one instances, there will be no problem. But, if they can contain only one instance, min and max value will be the same and this can lead to a problem. So, for now, we assumed that future bags will have mode than one instances and this approach is applicable for this problem.
+
+```{r}
+musk1_min = musk1[, lapply(.SD, min), by = BagId]
+colnames(musk1_min) = c("BagId", "BagClass", paste(colnames(musk1_min)[3:ncol(musk1_min)], "_min", sep = ""))
+musk1_max = musk1[, lapply(.SD, max), by = BagId]
+colnames(musk1_max) = c("BagId", "BagClass", paste(colnames(musk1_max)[3:ncol(musk1_max)], "_max", sep = ""))
+
+data = musk1_min %>%
+  left_join(musk1_max, by = c("BagId", "BagClass"))
+
+data[, BagId := NULL]
+head(data)
+```
+
+Now, we are ready to create models from with this approach
+
+```{r}
+lasso_cv = cv.glmnet(as.matrix(data[,2:ncol(data)]), as.matrix(data$BagClass), alpha = 1, family = "binomial")
+  
+lasso = glmnet(as.matrix(data[,2:ncol(data)]), as.matrix(data$BagClass), alpha = 1, family = "binomial", lambda = lasso_cv$lambda.1se)
+  
+pred = predict(lasso, as.matrix(data[,2:ncol(data)]), type = "response")
+  
+roc.curve(data$BagClass, pred, main = 'Second Approach For Lasso Regression', cex.main = 0.7, cex.axis = 0.7)
+auc_lasso = auc(data$BagClass, pred)
+
+lambda_lasso = lasso_cv$lambda.1se
+```
+
+So, it shows that we have `r auc_lasso` auc score with lasso regression with this data. Best lambda value is `r lambda_lasso`.
+
+We can do the similar approach for random forest.
+
+```{r}
+set.seed(12345) 
+control = trainControl(method ="cv", number = 10)
+rf = train(x = data[,2:ncol(data)],
+           y = as.factor(data$BagClass),
+           trControl = control, 
+           tuneGrid =  expand.grid(mtry = seq(floor(ncol(data) / 4), floor(ncol(data) / 2), length.out = 5)),
+           ntree = 500,
+           nodesize = 5 
+           ) 
+  
+pred = predict(rf$finalModel, data[,2:ncol(data)], type = "response")
+  
+roc.curve(data$BagClass, pred, main = 'Second Approach For Random Forest', cex.main = 0.7, cex.axis = 0.7)
+auc_rf = auc(data$BagClass, pred)
+
+mtry = rf$finalModel$mtry
+```
+
+So, it shows that we have `r auc_rf` auc score with random forest with this data. Best mtry value is `r mtry`.
+
+## 3. CONCLUSION
+
+We need to compare the results of all approaches and models. All AUC scores are below:
+
+```{r}
+paste("AUC score of first approach with euclidean distance and lasso regression = ", max(auc_euc_medoid$auc))
+paste("AUC score of first approach with euclidean distance and random forest = ", max(auc_euc_medoid2$auc))
+paste("AUC score of first approach with manhattan distance and lasso regression = ", max(auc_man_medoid$auc))
+paste("AUC score of first approach with manhattan distance and random forest = ", max(auc_man_medoid2$auc))
+paste("AUC score of second approach with lasso regression = ", auc_lasso)
+paste("AUC score of second approach with random forest = ", auc_rf)
+```
+
+So, we can say that random forest algorithm is a better model in all approaches. All random forest algorithms but the one for the first approach with manhattan distance have 1 as auc score. It can be said that there is an overfitting issue in this model. For now, these two models have the best AUC score for training data. For further work, we can try to search whether there is an overfitting issue or not and apply PCA to lower the dimensionality and decrease the time for creating models.
+
+## 4. REFERENCES
+1) [Data](https://archive.ics.uci.edu/ml/datasets/Musk+(Version+1))
+2) [Bag encoding strategies in multiple instance learning problems](https://www.sciencedirect.com/science/article/abs/pii/S0020025518306261?via%3Dihub)
+3) [K-means example](https://uc-r.github.io/kmeans_clustering)
