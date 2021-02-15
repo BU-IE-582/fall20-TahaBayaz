@@ -16,7 +16,15 @@ You can find the homework from this [R](Homework/HW2/PCA-uWaveGestureLibrary-R.h
 
 You can find the homework from this [R](Homework/HW3/Electricity Consumption Forecast R.html) / [Python](Homework/HW3/Electricity Consumption Forecast Python.html)
 
-
 ## Homework 4
 
 You can find the homework from this [R](Homework/HW4/Model-Performance-R.html)
+
+## Final
+
+You can find the final from this [R](Homework/Final/MIL.html)
+
+## Project
+
+You can find the project report from this [link](Project/IE582_ProjectReport.html)
+You can find the project code from this [link](Project/Project.html)
