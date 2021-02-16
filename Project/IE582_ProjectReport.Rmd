@@ -146,7 +146,7 @@ There are still many algorithms which combine different methods in order to over
 
 ## 6. Code
 
-You can find codes for the project from this [link](https://github.com/BU-IE-582/fall20-TahaBayaz/tree/master/Project/Project.html)
+You can find codes for the project from this [link](https://bu-ie-582.github.io/fall20-TahaBayaz/Project/Project.html)
 
 ## 7. References
 
