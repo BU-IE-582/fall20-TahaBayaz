@@ -26,6 +26,5 @@ You can find the final from this [R](Homework/Final/MIL.html)
 
 ## Project
 
-You can find the project report from this [link](Project/IE582_ProjectReport.html)
-
+<b>You can find the project report from this [link](Project/IE582_ProjectReport.html)</b>
 You can find the project code from this [link](Project/Project.html)
